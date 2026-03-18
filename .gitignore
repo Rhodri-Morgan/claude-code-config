@@ -1,0 +1,46 @@
+# Personal configuration (user-specific, not shared with team)
+personal/*
+!personal/.gitkeep
+
+# Local Claude Code settings (personal overrides)
+.claude/settings.local.json
+
+# Git worktrees (for parallel Claude Code sessions)
+.worktrees/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dependencies (if any examples are added)
+node_modules/
+__pycache__/
+*.pyc
+
+# Claude
+.claude/backups/
+.claude/cache/
+.claude/plugins/
+.claude/projects/
+.claude/sessions/
+.claude/worktrees/
+.claude/settings.local.json
+.claude/.claude.json
+.claude/history.jsonl
+.claude/policy-limits.json
+.claude/plans
+.claude/debug
+.claude/file-history
+.claude/session-env
+.claude/shell-snapshots
