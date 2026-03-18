@@ -1,7 +1,7 @@
 ---
 name: branch
 description: Create branches with auto-generated conventional names
-allowed-tools: Bash(git branch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git status:*), Bash(git diff:*), AskUserQuestion
+allowed-tools: Bash(git branch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git status:*), Bash(git diff:*)
 user-invocable: true
 model: haiku
 ---
@@ -52,9 +52,7 @@ Run these commands to understand the current state:
 
 ### Step 2: Determine Branch Type and Description
 
-**If changes exist** (diff or status shows modifications):
-
-Analyze the current changes and determine the appropriate type:
+Analyze the current changes (or `$ARGUMENTS` context) and determine the appropriate type:
 
 - `feature`: New files with functionality, new capabilities, adding features
 - `bugfix`: Fixing existing bugs, error corrections
@@ -69,28 +67,27 @@ Then generate a concise description:
 - Format: lowercase, hyphens between words
 - Examples: `user-auth`, `fix-pipeline`, `update-deps`
 
-**If no changes exist** (clean working directory):
+If no changes exist and no arguments provide context, infer the best type and description from the conversation context.
 
-Ask the user using AskUserQuestion:
+### Step 3: Construct Branch Name
 
-1. "What type of work will this branch be for?" with options:
-   - Feature (new functionality)
-   - Bugfix (fix existing bug)
-   - Chore (maintenance, deps, configs)
-   - Hotfix (urgent production fix)
+Apply the naming conventions: `<type>/<description>`
 
-2. "Brief description (2-4 words)?" - user provides via "Other" option
+### Step 4: Create Branch
 
-### Step 3: Create Branch
+Run `git checkout -b <branch-name>` without asking for confirmation.
 
-Construct the branch name as `<type>/<description>` and run `git checkout -b <branch-name>` without asking for confirmation.
-
-### Step 4: Confirm
+### Step 5: Confirm
 
 Report the created branch name to the user.
 
 ## Examples
 
+With changes:
+
 - Changes show new auth module files → `feature/user-auth` → creates branch, reports success
 - Changes show dependency updates → `chore/update-deps` → creates branch, reports success
-- Clean working directory → prompts user for type and description → `feature/user-auth` → creates branch, reports success
+
+From conversation context:
+
+- User has been working on auth feature → `feature/user-auth` → creates branch, reports success

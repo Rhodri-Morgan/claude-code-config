@@ -1,7 +1,7 @@
 ---
 name: pull-request
 description: Create a pull request with AI-generated description
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh pr edit:*), Read, Skill(branch)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git push:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh pr edit:*), Read
 user-invocable: true
 ---
 
@@ -29,7 +29,7 @@ gh auth login
 
 ### PR Title Format
 
-Use conventional commit format with emoji from [gitmoji.json](../commit/gitmoji.json):
+Use conventional commit format with emoji from [gitmoji.json](../../shared/gitmoji.json):
 
 - Always include an appropriate emoji at the beginning (use the actual character, not :code:)
 - Format: `emoji(scope): short description`
@@ -51,8 +51,8 @@ Follow the template at `.github/pull_request_template.md`:
 
 ### Best Practices
 
-- **Always create PRs as drafts** using the `--draft` flag
-- Do NOT show a preview or ask for confirmation — just create the PR automatically
+- **Always start PRs as drafts** using the `--draft` flag
+- Do NOT ask for confirmation — just create the PR automatically
 
 ### Common Mistakes to Avoid
 
@@ -89,7 +89,7 @@ gh pr merge <PR-NUMBER> --squash
 
 ### Step 1: Check Prerequisites
 
-Run `git branch --show-current`. If on `main` or `master`, automatically invoke `Skill(branch)` to create a new branch before proceeding. Read the PR template at `.github/pull_request_template.md`.
+Run `git branch --show-current` to verify the branch is not `main` or `master`. Read the PR template at `.github/pull_request_template.md`.
 
 ### Step 2: Gather Branch Information
 

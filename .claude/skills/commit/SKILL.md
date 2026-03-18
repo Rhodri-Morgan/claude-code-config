@@ -45,7 +45,7 @@ Create commits with gitmoji conventional commit format.
 
 | Component | Required | Description                                                     |
 | --------- | -------- | --------------------------------------------------------------- |
-| emoji     | Yes      | Gitmoji from [gitmoji.json](gitmoji.json)                       |
+| emoji     | Yes      | Gitmoji from [gitmoji.json](../../shared/gitmoji.json)          |
 | type      | Yes      | feat, fix, refactor, chore, docs, test, style, perf, ci, revert |
 | scope     | No       | Module/component name (e.g., auth, api, ui)                     |
 | subject   | Yes      | Imperative, lowercase, no period, <=72 chars                    |
@@ -54,7 +54,7 @@ Create commits with gitmoji conventional commit format.
 
 ### Gitmoji Reference
 
-Primary source: [gitmoji.json](gitmoji.json) - always use this file first.
+Primary source: [gitmoji.json](../../shared/gitmoji.json) - always use this file first.
 
 Only fetch from <https://gitmoji.dev/api/gitmojis> if:
 
@@ -66,7 +66,7 @@ Ask the user for context to select the best emoji if needed.
 ### Selection Criteria
 
 1. Identify the primary purpose of the change
-2. Choose the most specific matching emoji from [gitmoji.json](gitmoji.json)
+2. Choose the most specific matching emoji from [gitmoji.json](../../shared/gitmoji.json)
 3. Use one emoji per commit
 4. Prioritize by impact: breaking changes > features > fixes > refactoring
 
