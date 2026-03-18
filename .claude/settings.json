@@ -198,8 +198,8 @@
       "Bash(*git branch -d *master*)",
       "Bash(*git reset --hard *main*)",
       "Bash(*git reset --hard *master*)",
-      "Bash(*git push origin :*main*)",
-      "Bash(*git push origin :*master*)",
+      "Bash(*git push origin :main*)",
+      "Bash(*git push origin :master*)",
       "Bash(*git push origin --delete *main*)",
       "Bash(*git push origin --delete *master*)",
       "Bash(*make terraform-destroy*)",
@@ -262,6 +262,10 @@
       "Bash(* mv *)"
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 .claude/scripts/context-monitor.py"
+  },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
@@ -281,9 +285,5 @@
   "forceLoginMethod": "claudeai",
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "tmux",
-  "statusLine": {
-    "type": "command",
-    "command": "python3 .claude/scripts/context-monitor.py"
-  }
+  "teammateMode": "tmux"
 }
