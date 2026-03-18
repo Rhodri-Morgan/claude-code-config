@@ -41,3 +41,21 @@ These plugins must be installed manually after cloning:
 /plugin marketplace add thedotmack/claude-mem
 /plugin install claude-mem
 ```
+
+## ZSH Configuration
+
+Add the following to `~/.zshrc` to launch Claude Code with different config directories:
+
+```bash
+# Claude Code (personal config)
+ccp() {
+    CLAUDE_CONFIG_DIR=/Users/rhodri/Documents/REPOS/RTM_REPOS/claude-config/.claude \
+    claude --dangerously-skip-permissions "$@"
+}
+
+# Claude Code (work config)
+cc() {
+    CLAUDE_CONFIG_DIR=/Users/rhodri/Documents/REPOS/claude-code-setup/.claude \
+    claude --dangerously-skip-permissions "$@"
+}
+```
