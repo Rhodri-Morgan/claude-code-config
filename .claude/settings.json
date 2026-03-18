@@ -262,6 +262,10 @@
       "Bash(* mv *)"
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "python3 .claude/scripts/context-monitor.py"
+  },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
@@ -281,9 +285,5 @@
   "forceLoginMethod": "claudeai",
   "alwaysThinkingEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "tmux",
-  "statusLine": {
-    "type": "command",
-    "command": "python3 .claude/scripts/context-monitor.py"
-  }
+  "teammateMode": "tmux"
 }
