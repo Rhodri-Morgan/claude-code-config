@@ -44,3 +44,4 @@ __pycache__/
 .claude/file-history
 .claude/session-env
 .claude/shell-snapshots
+.claude/mcp-needs-auth-cache.json
