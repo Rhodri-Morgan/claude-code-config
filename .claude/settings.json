@@ -264,7 +264,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "python3 .claude/scripts/context-monitor.py"
+    "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/context-monitor.py"
   },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
@@ -272,7 +272,8 @@
     "claude-md-management@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
-    "claude-mem@thedotmack": true
+    "claude-mem@thedotmack": true,
+    "superpowers@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
