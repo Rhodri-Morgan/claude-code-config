@@ -1,4 +1,4 @@
-# claude-code-config
+# claude-code-config — Agent Instructions
 
 This repository defines a Claude setup.
 
