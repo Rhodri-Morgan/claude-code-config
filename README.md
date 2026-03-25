@@ -1,6 +1,6 @@
-# claude-config
+# Claude Code Config
 
-Shared Claude Code configuration. Contains custom skills, hooks, and settings.
+Personal Claude Code configuration.
 
 ## Third-Party Skills
 
@@ -47,15 +47,8 @@ These plugins must be installed manually after cloning:
 Add the following to `~/.zshrc` to launch Claude Code with different config directories:
 
 ```bash
-# Claude Code (personal config)
-ccp() {
-    CLAUDE_CONFIG_DIR=/Users/rhodri/Documents/REPOS/RTM_REPOS/claude-config/.claude \
-    claude --dangerously-skip-permissions "$@"
-}
-
-# Claude Code (work config)
 cc() {
-    CLAUDE_CONFIG_DIR=/Users/rhodri/Documents/REPOS/claude-code-setup/.claude \
+    CLAUDE_CONFIG_DIR=$REPOS/claude-config/.claude \
     claude --dangerously-skip-permissions "$@"
 }
 ```

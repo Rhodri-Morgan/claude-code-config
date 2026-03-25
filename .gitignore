@@ -45,3 +45,5 @@ __pycache__/
 .claude/session-env
 .claude/shell-snapshots
 .claude/mcp-needs-auth-cache.json
+.claude/paste-cache
+.claude/tasks
