@@ -40,6 +40,9 @@ These plugins must be installed manually after cloning:
 ```bash
 /plugin marketplace add thedotmack/claude-mem
 /plugin install claude-mem
+
+/plugin marketplace add warpdotdev/claude-code-warp
+/plugin install warp@claude-code-warp
 ```
 
 ## ZSH Configuration

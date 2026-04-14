@@ -274,13 +274,20 @@
     "context7@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
       "source": {
         "source": "github",
         "repo": "thedotmack/claude-mem"
+      }
+    },
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
       }
     }
   },
