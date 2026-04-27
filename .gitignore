@@ -47,4 +47,6 @@ __pycache__/
 .claude/mcp-needs-auth-cache.json
 .claude/paste-cache
 .claude/tasks
-.clayde/teams
+.claude/teams
+.claude/credentials.json
+.claude/.credentials.json
