@@ -42,41 +42,6 @@ def get_git_status():
         return ""
 
 
-def get_git_diff_line_counts():
-    try:
-        repo_root = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], stderr=subprocess.DEVNULL).decode().strip()
-
-        def parse_numstat_output(output):
-            added = 0
-            removed = 0
-            for line in output.splitlines():
-                parts = line.split("\t")
-                if len(parts) < 3:
-                    continue
-                a, r = parts[0], parts[1]
-                if a != "-":
-                    try:
-                        added += int(a)
-                    except ValueError:
-                        pass
-                if r != "-":
-                    try:
-                        removed += int(r)
-                    except ValueError:
-                        pass
-            return added, removed
-
-        diff_unstaged = subprocess.check_output(["git", "diff", "--numstat"], cwd=repo_root, stderr=subprocess.DEVNULL).decode()
-        diff_staged = subprocess.check_output(["git", "diff", "--cached", "--numstat"], cwd=repo_root, stderr=subprocess.DEVNULL).decode()
-
-        added_u, removed_u = parse_numstat_output(diff_unstaged)
-        added_s, removed_s = parse_numstat_output(diff_staged)
-
-        return added_s + added_u, removed_s + removed_u
-    except Exception:
-        return None
-
-
 def parse_context_from_transcript(transcript_path):
     """Parse context usage from transcript file."""
     if not transcript_path or not os.path.exists(transcript_path):
@@ -152,40 +117,25 @@ def get_context_display(context_info):
         return "🔵 ???"
 
     percent = context_info.get("percent", 0)
-    warning = context_info.get("warning")
 
     # Color and icon based on usage level
     if percent >= 95:
         icon, color = "🚨", "\033[31;1m"  # Blinking red
-        alert = "CRIT"
     elif percent >= 90:
         icon, color = "🔴", "\033[31m"  # Red
-        alert = "HIGH"
     elif percent >= 75:
         icon, color = "🟠", "\033[91m"  # Light red
-        alert = ""
     elif percent >= 50:
         icon, color = "🟡", "\033[33m"  # Yellow
-        alert = ""
     else:
         icon, color = "🟢", "\033[32m"  # Green
-        alert = ""
 
     # Create progress bar
     segments = 8
     filled = int((percent / 100) * segments)
     bar = "█" * filled + "▁" * (segments - filled)
 
-    # Special warnings
-    if warning == "auto-compact":
-        alert = "AUTO-COMPACT!"
-    elif warning == "low":
-        alert = "LOW!"
-
-    reset = "\033[0m"
-    alert_str = f" {alert}" if alert else ""
-
-    return f"{icon}{color}{bar}{reset} {percent:.0f}%{alert_str}"
+    return f"{icon}{color}{bar}\033[0m"
 
 
 def get_directory_display(workspace_data):
@@ -242,62 +192,6 @@ def get_session_metrics(cost_data):
             duration_str = f"{minutes:.0f}m"
 
         metrics.append(f"{duration_color}⏱ {duration_str}\033[0m")
-
-    # Lines changed
-    added_keys = ("total_lines_added", "lines_added", "total_lines_inserted")
-    removed_keys = ("total_lines_removed", "lines_removed", "total_lines_deleted")
-    net_keys = ("total_lines_changed", "net_lines", "total_lines_delta", "total_net_lines")
-
-    lines_added = None
-    for k in added_keys:
-        if k in cost_data:
-            lines_added = cost_data.get(k, 0) or 0
-            break
-
-    lines_removed = None
-    for k in removed_keys:
-        if k in cost_data:
-            lines_removed = cost_data.get(k, 0) or 0
-            break
-
-    if lines_added is not None or lines_removed is not None:
-        if lines_added is None:
-            lines_added = 0
-        if lines_removed is None:
-            lines_removed = 0
-
-        if lines_added == 0 and lines_removed == 0:
-            git_counts = get_git_diff_line_counts()
-            if git_counts is not None:
-                lines_added, lines_removed = git_counts
-
-        net_lines = lines_added - lines_removed
-
-        if net_lines > 0:
-            lines_color = "\033[32m"  # Green for additions
-        elif net_lines < 0:
-            lines_color = "\033[31m"  # Red for deletions
-        else:
-            lines_color = "\033[33m"  # Yellow for neutral
-
-        metrics.append(f"{lines_color}📝 +{lines_added} -{lines_removed}\033[0m")
-    else:
-        net_lines = None
-        for k in net_keys:
-            if k in cost_data:
-                net_lines = cost_data.get(k, 0) or 0
-                break
-
-        if net_lines is not None:
-            if net_lines > 0:
-                lines_color = "\033[32m"
-            elif net_lines < 0:
-                lines_color = "\033[31m"
-            else:
-                lines_color = "\033[33m"
-
-            sign = "+" if net_lines >= 0 else "-"
-            metrics.append(f"{lines_color}📝 {sign}{abs(net_lines)}\033[0m")
 
     return f" \033[90m|\033[0m {' '.join(metrics)}" if metrics else ""
 
