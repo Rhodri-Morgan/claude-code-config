@@ -7,7 +7,6 @@ Real-time context usage monitoring with visual indicators and session analytics
 import json
 import sys
 import os
-import re
 import subprocess
 
 
@@ -40,102 +39,6 @@ def get_git_status():
 
     except Exception:
         return ""
-
-
-def parse_context_from_transcript(transcript_path):
-    """Parse context usage from transcript file."""
-    if not transcript_path or not os.path.exists(transcript_path):
-        return None
-
-    try:
-        with open(transcript_path, "r", encoding="utf-8", errors="replace") as f:
-            lines = f.readlines()
-
-        # Check last 15 lines for context information
-        recent_lines = lines[-15:] if len(lines) > 15 else lines
-
-        for line in reversed(recent_lines):
-            try:
-                data = json.loads(line.strip())
-
-                # Method 1: Parse usage tokens from assistant messages
-                if data.get("type") == "assistant":
-                    message = data.get("message", {})
-                    usage = message.get("usage", {})
-
-                    if usage:
-                        input_tokens = usage.get("input_tokens", 0)
-                        cache_read = usage.get("cache_read_input_tokens", 0)
-                        cache_creation = usage.get("cache_creation_input_tokens", 0)
-
-                        # Estimate context usage (assume 200k context for Claude Sonnet)
-                        total_tokens = input_tokens + cache_read + cache_creation
-                        if total_tokens > 0:
-                            percent_used = min(100, (total_tokens / 200000) * 100)
-                            return {
-                                "percent": percent_used,
-                                "tokens": total_tokens,
-                                "method": "usage",
-                            }
-
-                # Method 2: Parse system context warnings
-                elif data.get("type") == "system_message":
-                    content = data.get("content", "")
-
-                    # "Context left until auto-compact: X%"
-                    match = re.search(r"Context left until auto-compact: (\d+)%", content)
-                    if match:
-                        percent_left = int(match.group(1))
-                        return {
-                            "percent": 100 - percent_left,
-                            "warning": "auto-compact",
-                            "method": "system",
-                        }
-
-                    # "Context low (X% remaining)"
-                    match = re.search(r"Context low \((\d+)% remaining\)", content)
-                    if match:
-                        percent_left = int(match.group(1))
-                        return {
-                            "percent": 100 - percent_left,
-                            "warning": "low",
-                            "method": "system",
-                        }
-
-            except (json.JSONDecodeError, KeyError, ValueError):
-                continue
-
-        return None
-
-    except (FileNotFoundError, PermissionError):
-        return None
-
-
-def get_context_display(context_info):
-    """Generate context display with visual indicators."""
-    if not context_info:
-        return "🔵 ???"
-
-    percent = context_info.get("percent", 0)
-
-    # Color and icon based on usage level
-    if percent >= 95:
-        icon, color = "🚨", "\033[31;1m"  # Blinking red
-    elif percent >= 90:
-        icon, color = "🔴", "\033[31m"  # Red
-    elif percent >= 75:
-        icon, color = "🟠", "\033[91m"  # Light red
-    elif percent >= 50:
-        icon, color = "🟡", "\033[33m"  # Yellow
-    else:
-        icon, color = "🟢", "\033[32m"  # Green
-
-    # Create progress bar
-    segments = 8
-    filled = int((percent / 100) * segments)
-    bar = "█" * filled + "▁" * (segments - filled)
-
-    return f"{icon}{color}{bar}\033[0m"
 
 
 def get_directory_display(workspace_data):
@@ -204,34 +107,17 @@ def main():
         # Extract information
         model_name = data.get("model", {}).get("display_name", "Claude")
         workspace = data.get("workspace", {})
-        transcript_path = data.get("transcript_path", "")
         cost_data = data.get("cost", {})
 
-        # Parse context usage
-        context_info = parse_context_from_transcript(transcript_path)
-
         # Build status components
-        context_display = get_context_display(context_info)
         directory = get_directory_display(workspace)
         session_metrics = get_session_metrics(cost_data)
         git_status = get_git_status()
 
-        # Model display with context-aware coloring
-        if context_info:
-            percent = context_info.get("percent", 0)
-            if percent >= 90:
-                model_color = "\033[31m"  # Red
-            elif percent >= 75:
-                model_color = "\033[33m"  # Yellow
-            else:
-                model_color = "\033[32m"  # Green
-
-            model_display = f"{model_color}[{model_name}]\033[0m"
-        else:
-            model_display = f"\033[94m[{model_name}]\033[0m"
+        model_display = f"\033[94m[{model_name}]\033[0m"
 
         # Combine all components
-        status_line = f"{model_display} " f"\033[93m📁 {directory}\033[0m" f"{git_status} " f"🧠 {context_display}" f"{session_metrics}"
+        status_line = f"{model_display} \033[93m📁 {directory}\033[0m{git_status}{session_metrics}"
 
         print(status_line)
 
