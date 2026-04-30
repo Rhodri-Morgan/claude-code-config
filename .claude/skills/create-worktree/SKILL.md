@@ -1,7 +1,7 @@
 ---
 name: create-worktree
 description: Create a git worktree on a fresh branch from latest main. Use when the user wants to start isolated work in a new worktree, says "new worktree", "worktree this", "spin up a worktree", or similar. Stashes any uncommitted changes on the current branch (left behind, not carried into the worktree), fast-forwards main, then creates the worktree on an auto-generated branch.
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git stash:*), Bash(git fetch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git pull:*), Bash(git worktree:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(basename:*), Bash(pwd)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git stash:*), Bash(git fetch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git pull:*), Bash(git worktree:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(basename:*), Bash(pwd), Bash(cp:*), Bash(mkdir:*), Bash(dirname:*)
 user-invocable: true
 model: haiku
 ---
@@ -15,6 +15,7 @@ Spin up a git worktree on a new branch cut from the latest `main`.
 - **Stash, don't carry.** Uncommitted changes on the current branch are stashed with a clear message and left behind. The new worktree starts from a clean, up-to-date `main`.
 - **Auto-generate branch name** unless the user supplied one in `$ARGUMENTS`.
 - **Worktree path**: `<parent-of-repo>/<repo>-<branch-slug>` where `branch-slug` replaces `/` with `-`.
+- **Copy `.env` files.** After creation, gitignored `.env` / `.env.*` files are copied from the source repo into the new worktree at the same relative paths.
 - **Never ask for confirmation** — execute the full flow.
 
 ## Branch Naming
@@ -84,13 +85,32 @@ Then:
 !git worktree add -b <branch-name> <worktree_path> main
 ```
 
-### Step 6: Report
+### Step 6: Copy `.env` files
+
+These are gitignored, so they don't come along with the worktree. Copy any `.env` / `.env.*` file that git ignores from `repo_root` to the same relative path in `worktree_path`. Skip tracked template files like `.env.example` automatically — `git ls-files --others --ignored --exclude-standard` only returns ignored files.
+
+From inside `repo_root`, list the candidates:
+
+```
+!git ls-files --others --ignored --exclude-standard | grep -E '(^|/)\.env($|\.)' || true
+```
+
+For each path returned (call it `rel`), copy it preserving the directory structure:
+
+```
+!mkdir -p "<worktree_path>/$(dirname <rel>)" && cp "<repo_root>/<rel>" "<worktree_path>/<rel>"
+```
+
+If the grep finds nothing (no `.env` files), skip silently — no env files is a valid state.
+
+### Step 7: Report
 
 Tell the user:
 
 - The worktree path
 - The new branch name
 - Whether a stash was created (and the stash message) on the original branch
+- How many `.env` files were copied (omit the line if zero)
 
 Keep it to 2–4 lines.
 
