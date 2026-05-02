@@ -50,7 +50,7 @@ Add the following to `~/.zshrc` to launch Claude Code with different config dire
 
 ```bash
 cc() {
-    CLAUDE_CONFIG_DIR=$REPOS/claude-config/.claude \
+    CLAUDE_CONFIG_DIR=$REPOS/claude-code-config/.claude \
     claude --dangerously-skip-permissions "$@"
 }
 ```
