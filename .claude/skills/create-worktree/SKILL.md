@@ -15,7 +15,7 @@ Spin up a git worktree on a new branch cut from the latest `main`.
 - **Stash, don't carry.** Uncommitted changes on the current branch are stashed with a clear message and left behind. The new worktree starts from a clean, up-to-date `main`.
 - **Auto-generate branch name** unless the user supplied one in `$ARGUMENTS`.
 - **Worktree path**: `<parent-of-repo>/<repo>-<branch-slug>` where `branch-slug` replaces `/` with `-`.
-- **Copy `.env` files.** After creation, gitignored `.env` / `.env.*` files are copied from the source repo into the new worktree at the same relative paths.
+- **Copy environment files.** After creation, both gitignored (`.env`, `.env.*`) and untracked-but-not-ignored (`.envrc`, `.envrc.local`) environment files are copied from the source repo into the new worktree at the same relative paths. `.envrc` is rarely committed even when it isn't in `.gitignore`, so we look at the full "not part of the tree" set, not just the ignored slice.
 - **Never ask for confirmation** — execute the full flow.
 
 ## Branch Naming
@@ -85,14 +85,14 @@ Then:
 !git worktree add -b <branch-name> <worktree_path> main
 ```
 
-### Step 6: Copy `.env` files
+### Step 6: Copy environment files
 
-These are gitignored, so they don't come along with the worktree. Copy any `.env` / `.env.*` file that git ignores from `repo_root` to the same relative path in `worktree_path`. Skip tracked template files like `.env.example` automatically — `git ls-files --others --ignored --exclude-standard` only returns ignored files.
+These don't come along with the worktree — either because they're gitignored (`.env`) or because they're just untracked (`.envrc` typically isn't in `.gitignore`, it just was never `git add`'d). Copy both shapes from `repo_root` to the same relative path in `worktree_path`.
 
-From inside `repo_root`, list the candidates:
+From inside `repo_root`, list the candidates. The union of "untracked" and "ignored" catches both shapes; tracked templates like `.env.example` are excluded automatically because they're tracked.
 
 ```
-!git ls-files --others --ignored --exclude-standard | grep -E '(^|/)\.env($|\.)' || true
+!{ git ls-files --others --exclude-standard; git ls-files --others --ignored --exclude-standard; } | sort -u | grep -E '(^|/)(\.env($|\.)|\.envrc($|\.))' || true
 ```
 
 For each path returned (call it `rel`), copy it preserving the directory structure:
@@ -101,7 +101,9 @@ For each path returned (call it `rel`), copy it preserving the directory structu
 !mkdir -p "<worktree_path>/$(dirname <rel>)" && cp "<repo_root>/<rel>" "<worktree_path>/<rel>"
 ```
 
-If the grep finds nothing (no `.env` files), skip silently — no env files is a valid state.
+If `cp` fails with a sandbox/permission error because the session's allowed working directories don't include the worktree, **don't retry blindly**. Report the failure in the final summary with the exact `cp` command the user should run themselves (e.g. `cp <repo_root>/<rel> <worktree_path>/<rel>`). The next Claude session, launched from the worktree, will have it as an allowed root.
+
+If the grep finds nothing, skip silently — no env files is a valid state.
 
 ### Step 7: Report
 
@@ -110,7 +112,8 @@ Tell the user:
 - The worktree path
 - The new branch name
 - Whether a stash was created (and the stash message) on the original branch
-- How many `.env` files were copied (omit the line if zero)
+- How many environment files were copied (omit the line if zero)
+- Any environment files the sandbox refused to copy, with the exact `cp` command to run manually
 
 Keep it to 2–4 lines.
 

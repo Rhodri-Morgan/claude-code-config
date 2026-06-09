@@ -32,6 +32,21 @@ MCP servers are provided via [MCP Toolkit by Docker](https://github.com/docker/m
 | Context7          | Library documentation and code examples lookup              |
 | GitHub Official   | Issues, PRs, commits, code search, repository management    |
 
+## MCP Servers (CLI)
+
+Some MCP servers are added directly via the `claude mcp add` CLI rather than the Docker Toolkit. Run these against this config directory so they land in the right `.claude` config:
+
+```bash
+export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
+
+# Linear (issues, projects) — HTTP transport, auth via OAuth on first use
+claude mcp add --transport http linear-server https://mcp.linear.app/mcp
+```
+
+| Server          | Transport | Endpoint / Command                | Description                |
+| --------------- | --------- | --------------------------------- | -------------------------- |
+| `linear-server` | http      | `https://mcp.linear.app/mcp`      | Linear issues and projects |
+
 ## Required Plugins
 
 These plugins must be installed manually after cloning:
