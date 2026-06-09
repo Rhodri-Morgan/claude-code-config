@@ -50,3 +50,5 @@ __pycache__/
 .claude/teams
 .claude/credentials.json
 .claude/.credentials.json
+.claude/.last-cleanup
+.claude/image-cache

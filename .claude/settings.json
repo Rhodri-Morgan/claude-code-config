@@ -286,7 +286,6 @@
     "context7@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
-    "superpowers@claude-plugins-official": true,
     "warp@claude-code-warp": true
   },
   "extraKnownMarketplaces": {
@@ -305,6 +304,8 @@
   },
   "forceLoginMethod": "claudeai",
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
   "teammateMode": "tmux"
 }
