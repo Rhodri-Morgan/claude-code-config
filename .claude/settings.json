@@ -286,7 +286,8 @@
     "context7@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
-    "warp@claude-code-warp": true
+    "warp@claude-code-warp": true,
+    "superwhisper@superwhisper": false
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -299,6 +300,12 @@
       "source": {
         "source": "github",
         "repo": "warpdotdev/claude-code-warp"
+      }
+    },
+    "superwhisper": {
+      "source": {
+        "source": "github",
+        "repo": "superultrainc/superwhisper-claude-code"
       }
     }
   },
