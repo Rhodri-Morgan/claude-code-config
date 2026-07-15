@@ -41,11 +41,15 @@ export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
 
 # Linear (issues, projects) — HTTP transport, auth via OAuth on first use
 claude mcp add --transport http linear-server https://mcp.linear.app/mcp
+
+# PostHog (analytics) — installed via the PostHog wizard
+npx @posthog/wizard mcp add
 ```
 
 | Server          | Transport | Endpoint / Command                | Description                |
 | --------------- | --------- | --------------------------------- | -------------------------- |
 | `linear-server` | http      | `https://mcp.linear.app/mcp`      | Linear issues and projects |
+| `posthog`       | wizard    | `npx @posthog/wizard mcp add`     | PostHog product analytics  |
 
 ## Required Plugins
 
@@ -57,9 +61,6 @@ These plugins must be installed manually after cloning:
 
 /plugin marketplace add warpdotdev/claude-code-warp
 /plugin install warp@claude-code-warp
-
-/plugin marketplace add superultrainc/superwhisper-claude-code
-/plugin install superwhisper@superwhisper
 ```
 
 ## ZSH Configuration
