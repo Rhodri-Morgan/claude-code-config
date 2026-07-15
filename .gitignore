@@ -52,3 +52,11 @@ __pycache__/
 .claude/.credentials.json
 .claude/.last-cleanup
 .claude/image-cache
+.claude/.last-update-result.json
+.claude/remote-settings.json
+.claude/daemon/
+.claude/jobs/
+.claude.json
+
+# Local backups
+backups/
