@@ -1,12 +1,11 @@
-.DEFAULT_GOAL := help
-.PHONY: help install install-full
-
-help: ## Show available targets
-	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
-
-install: ## Install this config into ~/.claude (prompts before replacing)
+.PHONY: install
+install:
 	./install.sh
 
-install-full: ## Install and also merge transcripts, sessions and prompt history (~1.5 GB)
+.PHONY: install-yes
+install-yes:
+	./install.sh --yes
+
+.PHONY: install-full
+install-full:
 	./install.sh --session-state
