@@ -12,6 +12,7 @@ Remove worktrees whose work is done — branch merged into `main` or remote trac
 
 ## Behavior
 
+- **Worktrees live in `<repo-root>/.worktrees/<repo>-<branch-slug>`.** That is the only layout `Skill(create-worktree)` produces. Legacy sibling worktrees (`../<repo>-<slug>`) may still exist in older checkouts — clean those up too, matching on the porcelain output rather than assuming a path shape.
 - **Never delete dirty worktrees.** If a worktree has uncommitted changes, skip it and report.
 - **Never delete the main worktree** (the one checked out on `main`/`master`).
 - **Show before removing.** Print the plan, then execute.
@@ -67,15 +68,18 @@ Print a short table:
 
 ```
 Will remove:
-  ../repo-feat-foo        feat/foo        (merged into main)
-  ../repo-fix-bar         fix/bar         (remote branch gone)
+  .worktrees/myrepo-feat-foo      feat/foo        (merged into master)
+  .worktrees/myrepo-fix-bar       fix/bar         (remote branch gone)
+  ../myrepo-old-thing             feat/old-thing  (legacy sibling, merged)
 
 Skipping (dirty, has uncommitted changes):
-  ../repo-wip-thing       feat/wip-thing
+  .worktrees/myrepo-wip-thing     feat/wip-thing
 
 Keeping:
-  ../repo-active          feat/active     (still in flight)
+  .worktrees/myrepo-active        feat/active     (still in flight)
 ```
+
+Show paths relative to the repo root — `.worktrees/myrepo-feat-foo` reads better than the absolute path and makes the layout obvious at a glance. Legacy siblings sit outside the repo root, so they show as `../<name>`.
 
 If `$ARGUMENTS` contains `--dry-run`, stop here.
 
@@ -94,6 +98,11 @@ Then:
 !git worktree prune
 ```
 
+`git worktree remove` leaves an empty `.worktrees/` behind once the last worktree
+is gone. Leave it. It is ignored, so it shows up in nothing, and the next
+`/create-worktree` reuses it. Deleting it would trip the `Bash(rmdir *)`
+ask-rule and stall an otherwise unattended cleanup for no benefit.
+
 ### Step 8: Final report
 
 One or two lines: how many worktrees removed, how many skipped (dirty), how many kept. Mention the dry-run flag if anything was skipped due to dirtiness.
@@ -111,7 +120,7 @@ User runs `/cleanup-worktrees`:
 1. Fetch with prune
 2. Find 2 merged worktrees and 1 with a deleted remote → remove all 3 and their branches
 3. Skip 1 dirty worktree with a warning
-4. Report: "Removed 3 worktrees (2 merged, 1 remote-gone). Skipped 1 dirty: ../repo-wip-thing."
+4. Report: "Removed 3 worktrees (2 merged, 1 remote-gone). Skipped 1 dirty: .worktrees/wip-thing."
 
 User runs `/cleanup-worktrees --dry-run`:
 
