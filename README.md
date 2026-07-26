@@ -126,6 +126,7 @@ Use the `make` targets:
 make install       # prompts before replacing
 make install-yes   # no prompt
 make install-full  # same as install, plus session state
+make install-full-yes
 ```
 
 | Target         | Runs                          | Effect                                                          |
@@ -133,6 +134,7 @@ make install-full  # same as install, plus session state
 | `install`      | `./install.sh`                | Prompts before replacing                                         |
 | `install-yes`  | `./install.sh --yes`          | No prompt — the prompt needs a tty, so this is the one an agent shell can use |
 | `install-full` | `./install.sh --session-state`| Also merges `projects/`, `sessions/`, `history.jsonl` (~1.5 GB)  |
+| `install-full-yes` | `./install.sh --session-state --yes` | The same, no prompt                                  |
 
 **Run it from the main checkout, not a worktree.** The script resolves its
 source `.claude` relative to its own location, so `make install` from inside
