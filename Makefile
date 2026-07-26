@@ -9,3 +9,7 @@ install-yes:
 .PHONY: install-full
 install-full:
 	./install.sh --session-state
+
+.PHONY: install-full-yes
+install-full-yes:
+	./install.sh --session-state --yes
