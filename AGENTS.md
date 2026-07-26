@@ -6,7 +6,6 @@ This repository defines a Claude setup.
 
 | Intent                             | Target              |
 | ---------------------------------- | ------------------- |
-| See targets                        | `make`              |
 | Install into `~/.claude`           | `make install`      |
 | Install without the prompt         | `make install-yes`  |
 | Install, including session state   | `make install-full` |

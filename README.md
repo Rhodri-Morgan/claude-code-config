@@ -123,7 +123,6 @@ and session state are left untouched.
 Use the `make` targets:
 
 ```bash
-make               # list targets
 make install       # prompts before replacing
 make install-yes   # no prompt
 make install-full  # same as install, plus session state
