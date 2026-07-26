@@ -61,6 +61,9 @@ These plugins must be installed manually after cloning:
 
 /plugin marketplace add warpdotdev/claude-code-warp
 /plugin install warp@claude-code-warp
+
+/plugin marketplace add getsentry/sentry-mcp
+/plugin install sentry-mcp@sentry-mcp
 ```
 
 ## ZSH Configuration

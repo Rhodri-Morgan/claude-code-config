@@ -287,7 +287,8 @@
     "code-review@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
     "warp@claude-code-warp": true,
-    "superwhisper@superwhisper": false
+    "posthog@claude-plugins-official": true,
+    "sentry-mcp@sentry-mcp": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -302,10 +303,10 @@
         "repo": "warpdotdev/claude-code-warp"
       }
     },
-    "superwhisper": {
+    "sentry-mcp": {
       "source": {
         "source": "github",
-        "repo": "superultrainc/superwhisper-claude-code"
+        "repo": "getsentry/sentry-mcp"
       }
     }
   },
