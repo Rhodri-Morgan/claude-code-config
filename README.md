@@ -11,60 +11,11 @@ Personal Claude Code configuration.
 | `scikit-learn`              | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Machine learning with scikit-learn                            |
 | `statistical-analysis`      | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Guided statistical analysis with test selection and reporting |
 | `literature-review`         | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Systematic literature reviews across academic databases       |
-| `ce-code-review`            | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | Multi-persona code review of a PR or branch — security, maintainability, `CLAUDE.md`/`AGENTS.md` conformance |
-| `ce-doc-review`             | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | Review requirements, plans, and specs with role-specific lenses |
-| `ce-resolve-pr-feedback`    | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) | Work through unresolved PR review threads and resolve them     |
-
-### compound-engineering
-
-The three `ce-*` skills are vendored from the [compound-engineering
-plugin](https://github.com/EveryInc/compound-engineering-plugin) (v3.20.0,
-MIT) — the review subset only, copied verbatim rather than installing the full
-32-skill plugin. Update by re-copying `skills/<name>/` from upstream.
-
-`/ce-code-review` is the main one. It reads the diff (current branch, a branch
-name, or a PR URL — never checking out), picks reviewer personas from what the
-diff actually touches, dispatches them as parallel subagents, then merges and
-deduplicates their findings into one report with P0–P3 severities. Findings
-that two personas independently agree on get promoted.
-
-| Persona | Fires when the diff touches |
-| ------- | --------------------------- |
-| `correctness` | always |
-| `project-standards` | always, when `CLAUDE.md` / `AGENTS.md` are discoverable — checks the diff against them |
-| `security` | auth, public endpoints, user input, permission checks, secrets |
-| `maintainability` | refactors, new abstractions, coupling/type-boundary changes, ≥200 changed lines |
-| `testing`, `performance`, `api-contract`, `data-migration`, `reliability`, `adversarial`, `previous-comments` | their concern is present in the diff |
-
-```bash
-/ce-code-review                          # current branch, report only
-/ce-code-review <PR number or URL>       # review a PR without checking it out
-/ce-code-review base:origin/main         # current checkout against a ref
-/ce-code-review apply:local              # authorise it to fix findings in place
-```
-
-Report-only by default — it will not touch the working tree without
-`apply:local`, and it never pushes.
-
-Notes on the vendored subset:
-
-- Upstream prose references sibling skills that were **not** vendored
-  (`ce-work`, `ce-plan`, `ce-brainstorm`, `ce-babysit-pr`). These are soft
-  references — descriptions of upstream callers and artifact provenance, not
-  runtime dependencies. The skills run standalone.
-- Scripts are stdlib `python3` + `bash`; no extra dependencies.
-- The optional cross-model adversarial pass shells out to a second provider CLI
-  (`codex`, `cursor-agent`, `grok`). With none installed it falls back to the
-  in-process `adversarial` persona.
-- Plan discovery looks under `docs/plans/` by default; override with `docs_root`
-  in a repo's `.compound-engineering/config.yaml`.
 
 ## Third-Party Agents
 
 | Agent              | Source                                                                                                           | Description                                          |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `code-reviewer`    | [claude-code-templates](https://www.npmjs.com/package/claude-code-templates) (`development-tools/code-reviewer`) | Senior code reviewer for quality, security, and perf |
-| `security-auditor` | [claude-code-templates](https://www.npmjs.com/package/claude-code-templates) (`security/security-auditor`)       | Security auditor for vulnerability analysis          |
 | `data-scientist`   | [claude-code-templates](https://www.npmjs.com/package/claude-code-templates) (`data-ai/data-scientist`)          | Data science agent with access to all DS skills      |
 
 ## MCP Servers (Docker Toolkit)
@@ -187,16 +138,6 @@ make install-full  # same, plus session state
 | `install`      | `./install.sh`                | Prompts before replacing                                         |
 | `install-full` | `./install.sh --session-state`| Also merges `projects/`, `sessions/`, `history.jsonl` (~1.5 GB)  |
 
-For anything else — a dry run, a different target directory, skipping plugins,
-or an unattended run — call the script directly:
-
-```bash
-./install.sh --dry-run       # show what would change, change nothing
-./install.sh -y              # no prompt
-./install.sh --no-plugins    # files only
-./install.sh --target DIR    # somewhere other than ~/.claude
-```
-
 **Run it from the main checkout, not a worktree.** The script resolves its
 source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
@@ -206,7 +147,7 @@ Beyond copying files, it fetches the marketplaces and plugins declared in
 `statusLine.command` to the installed script path (so it no longer depends on
 `$RTM_REPOS`).
 
-### claude-mem history
+### `claude-mem` history
 
 Nothing to migrate. claude-mem stores its memory in `~/.claude-mem`
 (`claude-mem.db` + `chroma/`), resolved from `CLAUDE_MEM_DATA_DIR` →
