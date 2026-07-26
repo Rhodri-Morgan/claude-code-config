@@ -38,7 +38,6 @@
       "mcp__plugin_claude-mem_mcp-search",
       "mcp__plugin_posthog_posthog",
       "mcp__plugin_sentry-mcp_sentry",
-      "mcp__supabase",
       "mcp__linear-server",
       "mcp__MCP_DOCKER",
       "Bash(git status:*)",
