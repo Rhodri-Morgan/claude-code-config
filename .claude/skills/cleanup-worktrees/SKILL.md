@@ -1,7 +1,7 @@
 ---
 name: cleanup-worktrees
 description: Prune git worktrees whose branches have been merged or whose remote tracking branch is gone (e.g. after a PR merge with auto-delete). Use when the user wants to tidy stale worktrees, says "cleanup worktrees", "prune worktrees", "remove old worktrees", or similar.
-allowed-tools: Bash(git worktree:*), Bash(git fetch:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git for-each-ref:*), Bash(basename:*), Bash(rmdir:*)
+allowed-tools: Bash(git worktree:*), Bash(git fetch:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git for-each-ref:*), Bash(basename:*)
 user-invocable: true
 model: haiku
 ---
@@ -12,7 +12,7 @@ Remove worktrees whose work is done — branch merged into `main` or remote trac
 
 ## Behavior
 
-- **Worktrees live in `<repo-root>/.worktrees/<branch-slug>`.** That is the only layout `Skill(create-worktree)` produces. Legacy sibling worktrees (`../<repo>-<slug>`) may still exist in older checkouts — clean those up too, matching on the porcelain output rather than assuming a path shape.
+- **Worktrees live in `<repo-root>/.worktrees/<repo>-<branch-slug>`.** That is the only layout `Skill(create-worktree)` produces. Legacy sibling worktrees (`../<repo>-<slug>`) may still exist in older checkouts — clean those up too, matching on the porcelain output rather than assuming a path shape.
 - **Never delete dirty worktrees.** If a worktree has uncommitted changes, skip it and report.
 - **Never delete the main worktree** (the one checked out on `main`/`master`).
 - **Show before removing.** Print the plan, then execute.
@@ -68,17 +68,18 @@ Print a short table:
 
 ```
 Will remove:
-  .worktrees/feat-foo      feat/foo        (merged into main)
-  .worktrees/fix-bar       fix/bar         (remote branch gone)
+  .worktrees/myrepo-feat-foo      feat/foo        (merged into master)
+  .worktrees/myrepo-fix-bar       fix/bar         (remote branch gone)
+  ../myrepo-old-thing             feat/old-thing  (legacy sibling, merged)
 
 Skipping (dirty, has uncommitted changes):
-  .worktrees/wip-thing     feat/wip-thing
+  .worktrees/myrepo-wip-thing     feat/wip-thing
 
 Keeping:
-  .worktrees/active        feat/active     (still in flight)
+  .worktrees/myrepo-active        feat/active     (still in flight)
 ```
 
-Show paths relative to the repo root — `.worktrees/feat-foo` reads better than the absolute path and makes the layout obvious at a glance.
+Show paths relative to the repo root — `.worktrees/myrepo-feat-foo` reads better than the absolute path and makes the layout obvious at a glance. Legacy siblings sit outside the repo root, so they show as `../<name>`.
 
 If `$ARGUMENTS` contains `--dry-run`, stop here.
 
@@ -97,11 +98,10 @@ Then:
 !git worktree prune
 ```
 
-`git worktree remove` leaves `.worktrees/` behind once the last worktree is gone. Remove it only if it is empty — `rmdir` refuses a non-empty directory, which is the safety property we want here:
-
-```
-!rmdir "<repo_root>/.worktrees" 2>/dev/null || true
-```
+`git worktree remove` leaves an empty `.worktrees/` behind once the last worktree
+is gone. Leave it. It is ignored, so it shows up in nothing, and the next
+`/create-worktree` reuses it. Deleting it would trip the `Bash(rmdir *)`
+ask-rule and stall an otherwise unattended cleanup for no benefit.
 
 ### Step 8: Final report
 

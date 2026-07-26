@@ -24,7 +24,7 @@ Resolve `$ARGUMENTS` in this order, first match wins:
 1. **Empty** → current worktree root (see Step 1).
 2. **`main`, `root`, or `primary`** → the main worktree: the first `worktree` entry in `git worktree list --porcelain`.
 3. **An existing path** (relative or absolute) → that path, as given.
-4. **A branch name or worktree slug** → match against `git worktree list --porcelain`. Compare the argument against both the `branch refs/heads/<name>` value and the basename of each worktree path, accepting a `/` → `-` slug match so `feat/oauth` finds `.worktrees/feat-oauth`. Unique substring matches are fine.
+4. **A branch name or worktree slug** → match against `git worktree list --porcelain`. Compare the argument against both the `branch refs/heads/<name>` value and the basename of each worktree path, accepting a `/` → `-` slug match. Worktree directories are named `<repo>-<branch-slug>`, so match on the suffix too — `feat/oauth` should find `.worktrees/myrepo-feat-oauth`. Unique substring matches are fine.
 5. **No match** → stop and report. List the available worktrees rather than guessing or creating anything.
 
 `-n` / `--new` anywhere in `$ARGUMENTS` means open a new window; strip it before resolving the target.
@@ -70,19 +70,19 @@ The command returns immediately — Cursor launches detached. A silent exit is s
 One line: what was opened and which branch it is on. For example:
 
 ```
-Opened .worktrees/feat-oauth (feat/oauth) in Cursor.
+Opened .worktrees/mulligan-rest-api-feat-oauth (feat/oauth) in Cursor.
 ```
 
 ## Examples
 
-`/cursor` from inside `~/repos/mulligan-rest-api/.worktrees/feat-oauth`
+`/cursor` from inside `~/repos/mulligan-rest-api/.worktrees/mulligan-rest-api-feat-oauth`
 → opens that worktree, not `~/repos/mulligan-rest-api`.
 
 `/cursor main`
 → opens the primary checkout even though you invoked it from a worktree.
 
 `/cursor feat/oauth`
-→ resolves the slug and opens `.worktrees/feat-oauth`.
+→ resolves the slug and opens `.worktrees/mulligan-rest-api-feat-oauth`.
 
 `/cursor ../some-other-repo`
 → path exists, opens it directly.
