@@ -55,6 +55,10 @@ __pycache__/
 .claude/.last-update-result.json
 .claude/remote-settings.json
 .claude/daemon/
+.claude/daemon.lock
+.claude/daemon.log
+.claude/daemon.status.json
+.claude/gh-pr-status-cache.json
 .claude/jobs/
 .claude.json
 
