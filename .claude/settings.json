@@ -33,6 +33,7 @@
       "Skill(cursor)",
       "Skill(create-worktree)",
       "Skill(cleanup-worktrees)",
+      "Skill(cleanup-docker)",
       "Skill(update-branch)",
       "mcp__plugin_context7_context7",
       "mcp__plugin_claude-mem_mcp-search",
