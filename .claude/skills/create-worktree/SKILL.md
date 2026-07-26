@@ -14,7 +14,7 @@ Spin up a git worktree on a new branch cut from the latest `main`.
 
 - **Stash, don't carry.** Uncommitted changes on the current branch are stashed with a clear message and left behind. The new worktree starts from a clean, up-to-date `main`.
 - **Auto-generate branch name** unless the user supplied one in `$ARGUMENTS`.
-- **Worktree path**: `<parent-of-repo>/<repo>-<branch-slug>` where `branch-slug` replaces `/` with `-`.
+- **Worktree path**: `<repo-root>/.worktrees/<branch-slug>` where `branch-slug` replaces `/` with `-`. All worktrees live inside the repo under a single gitignored `.worktrees/` directory — never as sibling folders next to the repo.
 - **Copy environment files.** After creation, both gitignored (`.env`, `.env.*`) and untracked-but-not-ignored (`.envrc`, `.envrc.local`) environment files are copied from the source repo into the new worktree at the same relative paths. `.envrc` is rarely committed even when it isn't in `.gitignore`, so we look at the full "not part of the tree" set, not just the ignored slice.
 - **Never ask for confirmation** — execute the full flow.
 
@@ -75,11 +75,24 @@ If `$ARGUMENTS` contains a branch name (with or without a type prefix), use it (
 Compute:
 
 - `repo_root` from `git rev-parse --show-toplevel`
-- `repo_name` = basename of `repo_root`
 - `branch_slug` = branch name with `/` → `-`
-- `worktree_path` = `<parent-of-repo_root>/<repo_name>-<branch_slug>`
+- `worktree_path` = `<repo_root>/.worktrees/<branch_slug>`
+
+If you are already inside a worktree, `git rev-parse --show-toplevel` returns *that* worktree, not the main checkout. Resolve the main checkout first so worktrees never nest:
+
+```
+!git worktree list --porcelain
+```
+
+The first `worktree <path>` entry is the main checkout — use it as `repo_root`.
+
+Ensure `.worktrees/` is gitignored before creating anything. If the repo's `.gitignore` has no `.worktrees/` entry, add one — an un-ignored `.worktrees/` pollutes every `git status` in the main checkout.
 
 Then:
+
+```
+!mkdir -p "<repo_root>/.worktrees"
+```
 
 ```
 !git worktree add -b <branch-name> <worktree_path> main
@@ -92,8 +105,10 @@ These don't come along with the worktree — either because they're gitignored (
 From inside `repo_root`, list the candidates. The union of "untracked" and "ignored" catches both shapes; tracked templates like `.env.example` are excluded automatically because they're tracked.
 
 ```
-!{ git ls-files --others --exclude-standard; git ls-files --others --ignored --exclude-standard; } | sort -u | grep -E '(^|/)(\.env($|\.)|\.envrc($|\.))' || true
+!{ git ls-files --others --exclude-standard; git ls-files --others --ignored --exclude-standard; } | sort -u | grep -v '^\.worktrees/' | grep -E '(^|/)(\.env($|\.)|\.envrc($|\.))' || true
 ```
+
+The `grep -v '^\.worktrees/'` matters: `.worktrees/` is gitignored, so the ignored-file scan would otherwise walk into sibling worktrees and try to copy *their* env files into the new one.
 
 For each path returned (call it `rel`), copy it preserving the directory structure:
 
@@ -123,11 +138,11 @@ User says "worktree this, I want to try a refactor of the auth module":
 
 1. Current branch `feature/old-work` has dirty changes → stash created
 2. `main` fast-forwarded
-3. Branch `refactor/auth-module` created in worktree `../claude-code-config-refactor-auth-module`
+3. Branch `refactor/auth-module` created in worktree `.worktrees/refactor-auth-module`
 4. Reported back with path, branch, and stash info
 
 User says "new worktree for feat/oauth":
 
 1. No dirty changes → no stash
 2. `main` updated
-3. Worktree `../claude-code-config-feat-oauth` on branch `feat/oauth`
+3. Worktree `.worktrees/feat-oauth` on branch `feat/oauth`

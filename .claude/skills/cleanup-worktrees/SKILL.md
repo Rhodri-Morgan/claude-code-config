@@ -1,7 +1,7 @@
 ---
 name: cleanup-worktrees
 description: Prune git worktrees whose branches have been merged or whose remote tracking branch is gone (e.g. after a PR merge with auto-delete). Use when the user wants to tidy stale worktrees, says "cleanup worktrees", "prune worktrees", "remove old worktrees", or similar.
-allowed-tools: Bash(git worktree:*), Bash(git fetch:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git for-each-ref:*), Bash(basename:*)
+allowed-tools: Bash(git worktree:*), Bash(git fetch:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git symbolic-ref:*), Bash(git for-each-ref:*), Bash(basename:*), Bash(rmdir:*)
 user-invocable: true
 model: haiku
 ---
@@ -12,6 +12,7 @@ Remove worktrees whose work is done — branch merged into `main` or remote trac
 
 ## Behavior
 
+- **Worktrees live in `<repo-root>/.worktrees/<branch-slug>`.** That is the only layout `Skill(create-worktree)` produces. Legacy sibling worktrees (`../<repo>-<slug>`) may still exist in older checkouts — clean those up too, matching on the porcelain output rather than assuming a path shape.
 - **Never delete dirty worktrees.** If a worktree has uncommitted changes, skip it and report.
 - **Never delete the main worktree** (the one checked out on `main`/`master`).
 - **Show before removing.** Print the plan, then execute.
@@ -67,15 +68,17 @@ Print a short table:
 
 ```
 Will remove:
-  ../repo-feat-foo        feat/foo        (merged into main)
-  ../repo-fix-bar         fix/bar         (remote branch gone)
+  .worktrees/feat-foo      feat/foo        (merged into main)
+  .worktrees/fix-bar       fix/bar         (remote branch gone)
 
 Skipping (dirty, has uncommitted changes):
-  ../repo-wip-thing       feat/wip-thing
+  .worktrees/wip-thing     feat/wip-thing
 
 Keeping:
-  ../repo-active          feat/active     (still in flight)
+  .worktrees/active        feat/active     (still in flight)
 ```
+
+Show paths relative to the repo root — `.worktrees/feat-foo` reads better than the absolute path and makes the layout obvious at a glance.
 
 If `$ARGUMENTS` contains `--dry-run`, stop here.
 
@@ -92,6 +95,12 @@ Then:
 
 ```
 !git worktree prune
+```
+
+`git worktree remove` leaves `.worktrees/` behind once the last worktree is gone. Remove it only if it is empty — `rmdir` refuses a non-empty directory, which is the safety property we want here:
+
+```
+!rmdir "<repo_root>/.worktrees" 2>/dev/null || true
 ```
 
 ### Step 8: Final report
@@ -111,7 +120,7 @@ User runs `/cleanup-worktrees`:
 1. Fetch with prune
 2. Find 2 merged worktrees and 1 with a deleted remote → remove all 3 and their branches
 3. Skip 1 dirty worktree with a warning
-4. Report: "Removed 3 worktrees (2 merged, 1 remote-gone). Skipped 1 dirty: ../repo-wip-thing."
+4. Report: "Removed 3 worktrees (2 merged, 1 remote-gone). Skipped 1 dirty: .worktrees/wip-thing."
 
 User runs `/cleanup-worktrees --dry-run`:
 
