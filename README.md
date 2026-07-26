@@ -36,10 +36,6 @@ Some MCP servers are added directly via the `claude mcp add` CLI rather than the
 ```bash
 export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
 
-# Supabase (read-only) — HTTP transport, auth via OAuth on first use
-claude mcp add --transport http supabase \
-  'https://mcp.supabase.com/mcp?read_only=true&features=database%2Cdebugging%2Cstorage%2Cdevelopment%2Cfunctions%2Cbranching'
-
 # PostHog (analytics) — installed via the PostHog wizard
 npx @posthog/wizard mcp add
 ```
@@ -47,7 +43,6 @@ npx @posthog/wizard mcp add
 | Server          | Transport | Endpoint / Command             | Description                |
 | --------------- | --------- | ------------------------------ | -------------------------- |
 | `linear-server` | http      | `https://mcp.linear.app/mcp`   | Linear issues and projects — added automatically by `install.sh` |
-| `supabase`      | http      | `https://mcp.supabase.com/mcp` | Supabase database, storage and functions — pinned `read_only=true` |
 | `posthog`       | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
 | `sentry`        | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
 
