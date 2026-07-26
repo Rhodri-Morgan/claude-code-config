@@ -93,11 +93,29 @@ claude mcp add --transport http supabase \
 npx @posthog/wizard mcp add
 ```
 
-| Server     | Transport | Endpoint / Command             | Description                |
-| ---------- | --------- | ------------------------------ | -------------------------- |
-| `supabase` | http      | `https://mcp.supabase.com/mcp` | Supabase database, storage and functions — pinned `read_only=true` |
-| `posthog`  | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
-| `sentry`   | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
+| Server          | Transport | Endpoint / Command             | Description                |
+| --------------- | --------- | ------------------------------ | -------------------------- |
+| `linear-server` | http      | `https://mcp.linear.app/mcp`   | Linear issues and projects — added automatically by `install.sh` |
+| `supabase`      | http      | `https://mcp.supabase.com/mcp` | Supabase database, storage and functions — pinned `read_only=true` |
+| `posthog`       | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
+| `sentry`        | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
+
+`linear-server` is the one server `install.sh` registers for you. It writes it
+into **every** config dir you might launch from, because which `.claude.json`
+`claude mcp add` writes to is decided by `CLAUDE_CONFIG_DIR` at the time of the
+call:
+
+| Launcher | `CLAUDE_CONFIG_DIR` | Config file |
+| -------- | ------------------- | ----------- |
+| `cc` (see ZSH Configuration) | `<repo>/.claude` | `<repo>/.claude/.claude.json` |
+| bare `claude` | unset | `~/.claude.json` |
+| `CLAUDE_CONFIG_DIR=~/.claude claude` | `~/.claude` | `~/.claude/.claude.json` |
+
+Registering in only one strands the server somewhere nothing reads — which is
+exactly what happened before: it was added to `~/.claude/.claude.json` while
+`cc` read the repo's copy and saw nothing.
+
+Authentication is still interactive — run `/mcp` once after installing.
 
 ### Per-machine servers
 
