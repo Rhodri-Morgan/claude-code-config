@@ -10,9 +10,7 @@ This repository defines a Claude setup.
 | Install into `~/.claude`           | `make install`      |
 | Install, including session state   | `make install-full` |
 
-Use these for a normal install. Everything else `install.sh` supports —
-`--dry-run`, `--target DIR`, `--no-plugins`, `-y` — has no target; call the
-script directly for those.
+Use these targets to install — do not invoke `install.sh` directly.
 
 `install.sh` resolves its source `.claude` relative to its own location, so
 running it from a worktree installs *that worktree's* config into `~/.claude`.
