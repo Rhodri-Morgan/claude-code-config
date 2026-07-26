@@ -2,9 +2,36 @@
 
 This repository defines a Claude setup.
 
+## Commands
+
+| Intent                             | Target              |
+| ---------------------------------- | ------------------- |
+| See targets                        | `make`              |
+| Install into `~/.claude`           | `make install`      |
+| Install, including session state   | `make install-full` |
+
+Use these for a normal install. Everything else `install.sh` supports —
+`--dry-run`, `--target DIR`, `--no-plugins`, `-y` — has no target; call the
+script directly for those.
+
+`install.sh` resolves its source `.claude` relative to its own location, so
+running it from a worktree installs *that worktree's* config into `~/.claude`.
+Install from the main checkout.
+
 ## Internal Claude Config
 
 Do not commit local runtime state, instead add to `.gitignore`.
+
+### MCP permissions
+
+Allowlist MCP access at **server** level in `settings.json`
+(`mcp__plugin_sentry-mcp_sentry`, not each tool) so a server gaining a tool
+needs no config change. Then pull individual tools that write to systems outside
+this machine back into `ask` — `ask` takes precedence over `allow`.
+
+Servers carrying environment-specific credentials (ClickHouse, Grafana) are
+added per machine and stay out of the allowlist deliberately, so their tools
+prompt on first use. Do not add them.
 
 ### Third-Party Components
 

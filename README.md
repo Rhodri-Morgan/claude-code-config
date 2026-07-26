@@ -85,18 +85,46 @@ Some MCP servers are added directly via the `claude mcp add` CLI rather than the
 ```bash
 export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
 
-# Linear (issues, projects) — HTTP transport, auth via OAuth on first use
-claude mcp add --transport http linear-server https://mcp.linear.app/mcp
+# Supabase (read-only) — HTTP transport, auth via OAuth on first use
+claude mcp add --transport http supabase \
+  'https://mcp.supabase.com/mcp?read_only=true&features=database%2Cdebugging%2Cstorage%2Cdevelopment%2Cfunctions%2Cbranching'
 
 # PostHog (analytics) — installed via the PostHog wizard
 npx @posthog/wizard mcp add
 ```
 
-| Server          | Transport | Endpoint / Command                | Description                |
-| --------------- | --------- | --------------------------------- | -------------------------- |
-| `linear-server` | http      | `https://mcp.linear.app/mcp`      | Linear issues and projects |
-| `posthog`       | wizard    | `npx @posthog/wizard mcp add`     | PostHog product analytics  |
-| `sentry`        | plugin    | `sentry-mcp@sentry-mcp`           | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
+| Server     | Transport | Endpoint / Command             | Description                |
+| ---------- | --------- | ------------------------------ | -------------------------- |
+| `supabase` | http      | `https://mcp.supabase.com/mcp` | Supabase database, storage and functions — pinned `read_only=true` |
+| `posthog`  | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
+| `sentry`   | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
+
+### Per-machine servers
+
+The ClickHouse (`clickhouse-clippd-*`, `clickhouse-analytics-*`,
+`clickhouse-scoreboard-*`) and Grafana (`grafana-mulligan-*`) servers are added
+per machine, not managed here — they carry environment-specific credentials and
+endpoints. They are deliberately absent from the `permissions.allow` list in
+`settings.json`, so their tools prompt on first use.
+
+### Permissions
+
+`settings.json` allowlists MCP access at **server** level
+(`mcp__plugin_sentry-mcp_sentry` covers every tool that server exposes) rather
+than tool by tool, so a server gaining a tool doesn't need a config change.
+
+Tools that write to systems outside this machine are then pulled back into `ask`,
+which takes precedence over `allow`:
+
+| Gated tool | Why |
+| ---------- | --- |
+| `mcp__plugin_sentry-mcp_sentry__update_issue` | Mutates real Sentry issues |
+| `mcp__MCP_DOCKER__mcp-add` / `__mcp-remove` / `__mcp-config-set` | Rewrites MCP server configuration |
+
+Note that `MCP_DOCKER`'s `mcp-exec` and `code-mode` tools invoke other MCP
+servers' tools, so they can reach a gated tool without triggering its `ask`
+rule. Left allowed on the basis that gating them would gate the gateway
+entirely; worth revisiting if that turns out to matter.
 
 ## Required Plugins
 
@@ -128,23 +156,37 @@ rather than merging into them. Anything it is about to overwrite is copied to
 `~/.claude/backups/config-<timestamp>/` first. `CLAUDE.md`, credentials, plugins
 and session state are left untouched.
 
+Use the `make` targets:
+
 ```bash
-./install.sh --dry-run   # show what would change
-./install.sh             # prompts before replacing
-./install.sh -y          # no prompt
+make               # list targets
+make install       # prompts before replacing
+make install-full  # same, plus session state
 ```
 
-It also fetches the marketplaces and plugins declared in `settings.json`, adds
-the Linear MCP server if missing, and rewrites `statusLine.command` to the
-installed script path (so it no longer depends on `$RTM_REPOS`).
+| Target         | Runs                          | Effect                                                          |
+| -------------- | ----------------------------- | --------------------------------------------------------------- |
+| `install`      | `./install.sh`                | Prompts before replacing                                         |
+| `install-full` | `./install.sh --session-state`| Also merges `projects/`, `sessions/`, `history.jsonl` (~1.5 GB)  |
 
-| Flag              | Effect                                                        |
-| ----------------- | ------------------------------------------------------------- |
-| `--target DIR`    | Install somewhere other than `~/.claude`                       |
-| `--dry-run`       | Print actions, change nothing                                  |
-| `--no-plugins`    | Skip plugin/marketplace/MCP steps (files only)                 |
-| `--session-state` | Also merge `projects/`, `sessions/`, `history.jsonl` across     |
-| `-y`, `--yes`     | Skip the confirmation prompt                                   |
+For anything else — a dry run, a different target directory, skipping plugins,
+or an unattended run — call the script directly:
+
+```bash
+./install.sh --dry-run       # show what would change, change nothing
+./install.sh -y              # no prompt
+./install.sh --no-plugins    # files only
+./install.sh --target DIR    # somewhere other than ~/.claude
+```
+
+**Run it from the main checkout, not a worktree.** The script resolves its
+source `.claude` relative to its own location, so `make install` from inside
+`.worktrees/<something>` installs *that worktree's* config.
+
+Beyond copying files, it fetches the marketplaces and plugins declared in
+`settings.json`, adds the `linear-server` MCP server if missing, and rewrites
+`statusLine.command` to the installed script path (so it no longer depends on
+`$RTM_REPOS`).
 
 ### claude-mem history
 
