@@ -319,5 +319,12 @@
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "teammateMode": "tmux"
+  "tui": "fullscreen",
+  "teammateMode": "tmux",
+  "autoCompactEnabled": true,
+  "fileCheckpointingEnabled": false,
+  "awaySummaryEnabled": false,
+  "preferredNotifChannel": "auto",
+  "agentPushNotifEnabled": true,
+  "remoteControlAtStartup": true
 }
