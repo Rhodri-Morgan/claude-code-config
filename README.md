@@ -33,6 +33,41 @@ Add both by hand — see [MCP Servers (CLI)](#mcp-servers-cli). They are
 deliberately absent from the `permissions.allow` list in `settings.json`, so
 publishing to a third party prompts on first use.
 
+#### `/mcp` Authenticate does not work on these two
+
+Both servers reject Claude Code's OAuth with
+`invalid_client: Unknown client or redirect_uri`. They advertise
+`client_id_metadata_document_supported`, then match `redirect_uri` as an exact
+string against Claude Code's metadata document, which declares the portless
+`http://localhost/callback` and relies on RFC 8252 §7.3 (loopback redirects must
+match on any port). Claude Code binds a random port, so it never matches — the
+identical request succeeds with the port stripped.
+
+`npx @agent-native/core connect` does not help: for Claude Code it deliberately
+writes URL-only config and points back at the same `/mcp` flow.
+
+Until upstream fixes it, authenticate over their device-code endpoint and put
+the token in the config yourself — the same `Authorization` header their
+installer writes for every non-Claude client:
+
+```bash
+# 1. start the flow, open verification_uri_complete, approve
+curl -s -X POST https://plan.agent-native.com/mcp/connect/device/start \
+  -H 'content-type: application/json' -d '{"client":"cowork","app":"plan"}'
+
+# 2. poll with the device_code until the response carries a token
+curl -s -X POST https://plan.agent-native.com/mcp/connect/device/poll \
+  -H 'content-type: application/json' -d '{"device_code":"..."}'
+
+# 3. inject it
+jq '.mcpServers.plan.headers.Authorization = "Bearer <token>"' ~/.claude.json
+```
+
+Substitute `design.agent-native.com` / `agent-native-design` / `"app":"design"`
+for the other one. These are long-lived bearer tokens held in plaintext with no
+refresh, so expiry means repeating the flow. Drop the `headers` key and use
+`/mcp` once upstream honours the loopback-port rule.
+
 Upstream also ships these as a plugin marketplace (`/plugin marketplace add
 BuilderIO/skills`). They are vendored here instead because `install.sh` replaces
 `~/.claude/skills/` wholesale — anything a separate installer writes there is
