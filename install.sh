@@ -138,6 +138,50 @@ elif [[ -f "$SRC/settings.json" ]]; then
   warn "jq not found — statusLine still depends on \$RTM_REPOS"
 fi
 
+# claude-mem reads ~/.claude-mem/settings.json, which sits outside CLAUDE_CONFIG_DIR
+# and so is never touched by the copy above. Merged key-by-key rather than replaced:
+# the live file also carries provider API keys and CLAUDE_MEM_DATA_DIR, none of which
+# this repo tracks.
+#
+# CLAUDE_CODE_PATH is resolved here rather than tracked. Left empty, claude-mem
+# resolves `claude` once via `which` inside a worker daemon that can outlive several
+# CLI updates; when that goes stale every summary fails and the Stop hook — which
+# polls for the summary synchronously — blocks each turn for its full 110s.
+CM_SRC="$REPO_DIR/claude-mem/settings.json"
+CM_FILE="$HOME/.claude-mem/settings.json"
+if [[ -f "$CM_SRC" ]] && command -v jq >/dev/null; then
+  info "merging claude-mem settings into $CM_FILE"
+  if (( DRY_RUN )); then
+    printf '    [dry-run] jq merge into %s\n' "$CM_FILE"
+  else
+    mkdir -p "$(dirname "$CM_FILE")"
+    [[ -f "$CM_FILE" ]] || echo '{}' >"$CM_FILE"
+    claude_bin="$(command -v claude || true)"
+    [[ -n "$claude_bin" ]] || warn "claude not on PATH — leaving CLAUDE_CODE_PATH unset"
+    tmp="$(mktemp)"
+    jq -s --arg claude_bin "$claude_bin" \
+      '.[0] * .[1] + (if $claude_bin == "" then {} else {CLAUDE_CODE_PATH: $claude_bin} end)' \
+      "$CM_FILE" "$CM_SRC" >"$tmp"
+    mv "$tmp" "$CM_FILE"
+
+    # The worker caches settings at startup, so a running one keeps the old values.
+    cm_port="$(jq -r '.CLAUDE_MEM_WORKER_PORT // "37777"' "$CM_FILE")"
+    if curl -sf -m 5 "http://127.0.0.1:$cm_port/health" >/dev/null 2>&1; then
+      cm_root="$(ls -dt "$HOME"/.claude/plugins/cache/thedotmack/claude-mem/[0-9]*/ 2>/dev/null | head -1)"
+      if [[ -n "$cm_root" ]]; then
+        info "restarting claude-mem worker to pick them up"
+        node "${cm_root}scripts/bun-runner.js" \
+          "${cm_root}scripts/worker-service.cjs" restart >/dev/null 2>&1 \
+          || warn "claude-mem worker restart failed — restart it by hand"
+      else
+        warn "claude-mem worker is running but the plugin is not installed yet — restart it after the plugin step"
+      fi
+    fi
+  fi
+elif [[ -f "$CM_SRC" ]]; then
+  warn "jq not found — skipping claude-mem settings merge"
+fi
+
 if (( ! DO_PLUGINS )); then
   info "done (--no-plugins)"
   exit 0

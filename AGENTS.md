@@ -34,6 +34,13 @@ Servers carrying environment-specific credentials (ClickHouse, Grafana) are
 added per machine and stay out of the allowlist deliberately, so their tools
 prompt on first use. Do not add them.
 
+### claude-mem settings
+
+`claude-mem/settings.json` is the one managed file outside `.claude/`, because
+claude-mem reads `~/.claude-mem/settings.json` rather than anything under
+`CLAUDE_CONFIG_DIR`. `install.sh` merges it instead of replacing, so the live
+file keeps its API keys and `CLAUDE_MEM_DATA_DIR` — do not add those keys here.
+
 ### Third-Party Components
 
 When installing any third-party component (skill, agent, command, plugin, etc.) from an external source:
