@@ -292,7 +292,8 @@
     "claude-mem@thedotmack": true,
     "warp@claude-code-warp": true,
     "posthog@claude-plugins-official": true,
-    "sentry-mcp@sentry-mcp": true
+    "sentry-mcp@sentry-mcp": true,
+    "figma@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
