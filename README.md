@@ -141,13 +141,40 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, adds the `linear-server` MCP server if missing, and rewrites
+`settings.json`, adds the `linear-server` MCP server if missing, rewrites
 `statusLine.command` to the installed script path (so it no longer depends on
-`$RTM_REPOS`).
+`$RTM_REPOS`), and merges `claude-mem/settings.json` into `~/.claude-mem`.
+
+### `claude-mem` settings
+
+`claude-mem/settings.json` at the repo root is the one managed thing that does
+*not* live under `.claude/` — claude-mem reads `~/.claude-mem/settings.json`,
+outside `CLAUDE_CONFIG_DIR` entirely, so the copy step never reaches it.
+
+It is **merged** key-by-key, not replaced: the live file also holds provider API
+keys and `CLAUDE_MEM_DATA_DIR`, which this repo deliberately does not track.
+Tracked keys win; anything else in the target survives. `CLAUDE_CODE_PATH` is
+resolved at install time from `command -v claude` rather than tracked, since it
+is machine-specific.
+
+Three of the tracked values exist to keep the `Stop` hook from stalling every
+turn. That hook is synchronous — it polls for its summary for up to 110s, against
+Claude Code's own 120s hook timeout — so anything that stops a summary completing
+costs you two minutes per turn, in every open session:
+
+| Key | Value | Why |
+| --- | ----- | --- |
+| `CLAUDE_CODE_PATH` | resolved at install | Left empty, claude-mem resolves `claude` via `which` inside a worker daemon that outlives CLI updates. Once stale, every summary fails |
+| `CLAUDE_MEM_EXCLUDED_PROJECTS` | `observer-sessions` | claude-mem summarises via Claude Code SDK subprocesses, which fire these same hooks and enqueue more summaries — self-feeding without this |
+| `CLAUDE_MEM_MAX_CONCURRENT_AGENTS` | `6` | Sized to the number of sessions typically open at once. Beyond the cap, sessions fail with `Timed out waiting for agent pool slot` |
+
+The worker caches settings at startup, so `install.sh` restarts it when one is
+already running.
 
 ### `claude-mem` history
 
-Nothing to migrate. claude-mem stores its memory in `~/.claude-mem`
+Nothing to migrate — memory is separate from the settings above. claude-mem
+stores it in `~/.claude-mem`
 (`claude-mem.db` + `chroma/`), resolved from `CLAUDE_MEM_DATA_DIR` →
 `~/.claude-mem/settings.json` → that hardcoded default — never from
 `CLAUDE_CONFIG_DIR`. Observations are keyed by project directory name, so recall
