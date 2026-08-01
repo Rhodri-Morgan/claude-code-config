@@ -11,6 +11,32 @@ Personal Claude Code configuration.
 | `scikit-learn`              | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Machine learning with scikit-learn                            |
 | `statistical-analysis`      | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Guided statistical analysis with test selection and reporting |
 | `literature-review`         | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Systematic literature reviews across academic databases       |
+| `read-the-damn-docs`        | [BuilderIO/skills](https://github.com/BuilderIO/skills)                                       | Web-search the official docs before implementing from memory  |
+| `visual-plan`               | [BuilderIO/skills](https://github.com/BuilderIO/skills)                                       | Publish a text plan as an interactive hosted plan             |
+| `visual-recap`              | [BuilderIO/skills](https://github.com/BuilderIO/skills)                                       | Publish a PR, branch or diff as an interactive hosted recap   |
+| `visual-edit`               | [BuilderIO/skills](https://github.com/BuilderIO/skills)                                       | Open a running localhost app as editable screens in Design    |
+
+### Agent-Native (`visual-*`) skills
+
+The three `visual-*` skills are front-ends for Builder's hosted Agent-Native
+service, not standalone. Each refuses to produce inline output by design — no
+Markdown fallback, no ASCII wireframe — and stops with a reconnect instruction
+when its connector is missing. Using them publishes the plan, diff or app routes
+to Builder's servers.
+
+| Skill | Connector | Endpoint |
+| ----- | --------- | -------- |
+| `visual-plan`, `visual-recap` | `plan` (older installs: `agent-native-plans`) | `https://plan.agent-native.com/mcp` |
+| `visual-edit` | `agent-native-design` | `https://design.agent-native.com/mcp` |
+
+Add both by hand — see [MCP Servers (CLI)](#mcp-servers-cli). They are
+deliberately absent from the `permissions.allow` list in `settings.json`, so
+publishing to a third party prompts on first use.
+
+Upstream also ships these as a plugin marketplace (`/plugin marketplace add
+BuilderIO/skills`). They are vendored here instead because `install.sh` replaces
+`~/.claude/skills/` wholesale — anything a separate installer writes there is
+lost on the next `make install`.
 
 ## Third-Party Agents
 
@@ -38,11 +64,17 @@ export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
 
 # PostHog (analytics) — installed via the PostHog wizard
 npx @posthog/wizard mcp add
+
+# Agent-Native — backs the visual-plan / visual-recap / visual-edit skills
+claude mcp add --scope user --transport http plan https://plan.agent-native.com/mcp
+claude mcp add --scope user --transport http agent-native-design https://design.agent-native.com/mcp
 ```
 
 | Server          | Transport | Endpoint / Command             | Description                |
 | --------------- | --------- | ------------------------------ | -------------------------- |
 | `linear-server` | http      | `https://mcp.linear.app/mcp`   | Linear issues and projects — added automatically by `install.sh` |
+| `plan`          | http      | `https://plan.agent-native.com/mcp` | Agent-Native Plan — backs `/visual-plan` and `/visual-recap` |
+| `agent-native-design` | http | `https://design.agent-native.com/mcp` | Agent-Native Design — backs `/visual-edit` |
 | `posthog`       | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
 | `sentry`        | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
 
@@ -59,7 +91,9 @@ call:
 
 Registering in only one strands the server somewhere nothing reads — which is
 exactly what happened before: it was added to `~/.claude/.claude.json` while
-`cc` read the repo's copy and saw nothing.
+`cc` read the repo's copy and saw nothing. The same applies to the hand-added
+servers above: the `export` at the top of that block covers `cc` only, so repeat
+them for any other launcher you use.
 
 Authentication is still interactive — run `/mcp` once after installing.
 
