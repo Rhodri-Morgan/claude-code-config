@@ -36,13 +36,8 @@ prompt on first use. Do not add them.
 
 ### Scripts referenced from settings.json
 
-Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"` — the
-config is installed into `~/.claude`, and hook and `statusLine` commands run
-through a shell, so this resolves wherever it is read from with no help from the
-installer. Keep the quotes.
-
-Do not point at the repo checkout. A source path only ever describes one
-machine, and `install.sh` has no way to fix one it hasn't been taught about.
+Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"`, quotes
+included. Never the repo checkout — that only describes one machine.
 
 ### claude-mem settings
 
