@@ -340,7 +340,7 @@
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "tui": "fullscreen",
+  "tui": "default",
   "teammateMode": "tmux",
   "autoCompactEnabled": true,
   "fileCheckpointingEnabled": false,
