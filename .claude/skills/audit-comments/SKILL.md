@@ -1,14 +1,14 @@
 ---
 name: audit-comments
-description: Audit the code comments added by the current change — cut the ones a reader could derive from the code, rewrite the ones that will go stale, and match the conventions of the files around them. Use when the user says "audit comments", "check the comments", "review my comments", or after writing code that adds comments, before committing or opening a PR.
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git merge-base:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(python3:*), Read, Edit, Glob, Grep
+description: Audit the code comments in the files a change touches — cut the ones a reader could derive from the code, rewrite the ones that will go stale, move the ones that belong in markdown, and match the conventions of the surrounding files. Use when the user says "audit comments", "check the comments", "review my comments", or after writing code that adds comments, before committing or opening a PR.
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git merge-base:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(python3:*), Read, Edit, Glob, Grep, Skill(audit-docs)
 user-invocable: true
 ---
 
 # Audit Comments
 
-Review every comment the current change adds, and act on the verdict. This is a
-quality pass over comments only — it does not look for bugs.
+Review the comments in the files a change touches, and act on the verdict. This
+is a quality pass over comments only — it does not look for bugs.
 
 ## The test
 
@@ -26,10 +26,14 @@ Everything below is that test applied along a different axis.
 
 ## Behavior
 
-- **Judge only what this change added.** A comment that was already there and
-  wasn't touched is out of scope, however bad. The exception is a comment
-  sitting next to code this change modified — if the edit made it wrong, it is
-  now this change's problem.
+- **Added comments are the trigger; every comment in a touched file is in
+  scope.** If a comment you pass on the way fails a check, fix it too — a file
+  you have already opened and read is the cheapest place this will ever be
+  fixed. The boundary is the set of files the change touches; don't wander into
+  files the change never opened.
+
+  This is the deliberate exception to the usual "don't sweep the file for
+  unrelated cleanup unless asked" rule. Invoking this skill *is* the asking.
 - **Act, don't just report.** Apply the cuts and rewrites, then say what
   changed. `--dry-run` reports and edits nothing.
 - **Convention beats preference.** Read the files around the change before
@@ -57,6 +61,7 @@ Everything below is that test applied along a different axis.
 | 5 | Short | Is it as short as the fact allows? | **Rewrite** |
 | 6 | Placed | Is it next to the thing it explains? | **Move** |
 | 7 | About the code | Is it about the code, or about the act of changing the code? | **Cut** |
+| 8 | Right medium | Is this about *this code*, or about how the system fits together? | **Move to markdown** |
 
 ### 1. Derivable
 
@@ -164,6 +169,42 @@ Git already records the change, and these go stale the moment anything moves:
 - section banners: `# ===== HELPERS =====`
 - addressing the reader: "Note that we…", "As you can see…"
 
+### 8. Right medium
+
+**Comments describe code. Markdown describes the system.** A comment is read by
+someone already looking at that line — it can only ever explain the thing it
+sits on. The moment a fact is about how parts fit together, it is in the wrong
+medium: nobody reads a `.py` file to learn the architecture, so a fact buried
+there reaches only the people who least need it.
+
+A comment is in the wrong medium when it explains:
+
+- how two services, repos or accounts talk to each other
+- a workflow or sequence spanning more than this file
+- a convention future work is expected to follow
+- a decision with consequences beyond the function it sits on
+- setup, deployment, or how to run the thing
+
+Where it goes instead:
+
+| The fact is… | It belongs in |
+| ------------ | ------------- |
+| a rule an agent must follow in this repo | `AGENTS.md` / `CLAUDE.md` |
+| how the pieces fit, or why they're arranged that way | `docs/` |
+| how to install, configure or run it | `README.md` |
+
+Move it, don't duplicate it. Then either leave nothing behind, or leave a one
+line pointer if the code genuinely needs the reader to know the doc exists.
+
+Having moved anything, audit the destination with `Skill(audit-docs)` — text
+lands in a doc at whatever quality it had as a comment, and the doc's rules are
+not the same ones.
+
+The narrow case still belongs in the code: a constraint that happens to come
+from another system, but which only affects *this line*, is a comment.
+`prepare_threshold=None` needs the pooler explanation right there. What the
+pooler is and why we use one is `docs/`.
+
 ## Workflow
 
 ### Step 1: Resolve the scope
@@ -197,21 +238,28 @@ If it returns nothing, say so and stop.
 
 ### Step 3: Read the surroundings
 
-Two reads per file, both necessary:
+Read each touched file **in full**, not just the neighbourhood of each finding.
+Two reasons: a comment cannot be judged from the diff — the derivability test is
+about what the reader can see on the page — and every other comment in that file
+is in scope, so you need to have seen them.
 
-- **The file itself**, around each finding. A comment cannot be judged from the
-  diff — the derivability test is about what the reader can see on the page.
-- **Two or three untouched neighbours** in the same directory and language, for
-  the convention check.
+Then read two or three untouched neighbours in the same directory and language,
+for the convention check.
 
 ### Step 4: Judge
 
-One verdict per comment: **keep**, **rewrite**, **cut**, or **move**. Name the
-check that failed. If nothing failed, it's a keep — say nothing further about
-it.
+One verdict per comment: **keep**, **rewrite**, **cut**, **move**, or
+**to markdown**. Name the check that failed. If nothing failed, it's a keep —
+say nothing further about it.
 
-Also sweep comments adjacent to modified code for check 2, even though the
-detector didn't list them.
+Judge three sets, in this order:
+
+1. The comments the detector listed.
+2. Comments adjacent to modified code, for check 2 — the edit may have just
+   falsified them.
+3. Every other comment in the touched files. Hold these to the same checks, but
+   report them separately: the user asked for a change, and comments they didn't
+   write moving in the same diff should be visible as a distinct group.
 
 ### Step 5: Apply
 
@@ -219,12 +267,17 @@ Make the edits, unless `--dry-run`. Cuts and rewrites only — do not touch the
 code the comments sit on. If a comment is only fixable by renaming the thing it
 describes, say that instead of doing it; the rename is a separate change.
 
+For anything judged **to markdown**, write it into the destination doc, then run
+`Skill(audit-docs)` over that doc before finishing.
+
 ### Step 6: Report
 
-Group by verdict, one line each, path:line first. Keeps are a count, not a list:
+Group by verdict, one line each, path:line first. Keeps are a count, not a list.
+Comments the change didn't add go in their own group, so the user can see what
+moved that they didn't write:
 
 ```
-Audited 11 added comments across 4 files.
+Audited 11 added comments across 4 files, plus 23 already in those files.
 
 Cut (5)
   clients/clickhouse.py:41   "# build the query" — derivable
@@ -234,6 +287,13 @@ Cut (5)
 Rewrote (3)
   clients/redis.py:22        dropped "takes about 300ms" — a measurement, keep the ordering claim
   ...
+
+Moved to markdown (1)
+  clients/livescoring.py:8   the two-Supabase-project explanation → docs/02-data-sources.md
+
+Pre-existing, same files (2)
+  clients/redis.py:104       cut "# returns a dict" — derivable
+  clients/redis.py:140       rewrote: said 3 retries, the decorator says 5
 
 Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 "must run before the NAT gateway" with no reference.
@@ -248,40 +308,12 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
   session; the slash command is the one that covers the whole PR.
 - **`AUDIT_COMMENTS_HOOK=0` disables the hook** for a session without touching
   settings.
-- **Languages covered**, by marker:
-
-  | Marker | Extensions |
-  | ------ | ---------- |
-  | `#` | `.py` `.pyi` `.sh` `.bash` `.zsh` `.rb` `.pl` `.r` `.yml` `.yaml` `.toml` `.graphql` `.gql` `.ex` `.exs` `.nix` `.jl` `.ps1` `.conf` `.properties`, and `#`/`;` for `.ini` `.cfg` |
-  | `//` | `.js` `.mjs` `.cjs` `.jsx` `.ts` `.tsx` `.go` `.java` `.kt` `.swift` `.c` `.h` `.cc` `.cpp` `.hpp` `.rs` `.scala` `.cs` `.dart` `.proto` `.prisma` `.groovy` `.gradle` `.scss` `.less` `.vue` `.svelte` |
-  | `--` | `.sql` `.lua` `.hs` |
-  | both `#` and `//` | `.tf` `.tfvars` `.hcl` `.php` |
-  | `/* … */` only | `.css` (plus block comments in every `//` language above) |
-  | `<!-- … -->` | `.html` `.htm` `.xml` `.vue` `.svelte` |
-  | by filename | `Makefile` `Dockerfile` `Justfile` `Procfile` `Brewfile` `.envrc` `.gitignore` `.dockerignore` `.editorconfig` |
-
-  Python docstrings (`"""`/`'''` openers) count as comments. Markdown, JSON and
-  lockfiles are skipped — prose is not comments, and the other two have none.
-  Anything not listed is invisible to the hook; add it to `LINE_MARKERS` in
-  `audit-comments-gate.py`. `/audit-comments <path>` still works on an
-  unlisted file, it just won't be found automatically.
+- **Which file types count is the script's business**, not this document's —
+  `LINE_MARKERS` and `NAME_MARKERS` in `audit-comments-gate.py` are the list.
+  Markdown is deliberately not among them: prose is not comments, and it has its
+  own skill. A type the script doesn't know is invisible to the hook, but
+  `/audit-comments <path>` still audits it on demand.
 - The hook fires once per `session + HEAD`, so committing re-arms it for the
   next batch of work. State lives in `~/.claude/state/audit-comments/` and is
   swept after seven days.
-
-## Examples
-
-`/audit-comments`
-
-1. Resolve base, list added comments across the branch
-2. Read each site plus two neighbours per directory
-3. Cut the derivable ones, rewrite the ones carrying figures, report
-
-`/audit-comments --dry-run`
-
-1. Same audit, no edits — a verdict list only
-
-`/audit-comments 42`
-
-1. `gh pr diff 42`, audit what that PR adds, report without editing (the branch
-   may not even be checked out)
+- `Skill(audit-docs)` is the counterpart, and check 8 is the seam between them.

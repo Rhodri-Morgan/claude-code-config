@@ -109,9 +109,14 @@ of work; `AUDIT_COMMENTS_HOOK=0` turns it off for a session. State lives in
 Detection is a shallow scan for comment markers outside string literals — it
 decides whether there is anything to audit, not whether the comments are good.
 The skill shares the same detector via `--list`, so an audit covers exactly what
-the hook flagged. Roughly 60 extensions across the `#`, `//`, `--`, `/* */` and
-`<!-- -->` families, plus `Makefile`-style filenames; the full table is in the
-skill. Markdown, JSON and lockfiles are excluded.
+the hook flagged. `LINE_MARKERS` in the script is the list of file types it
+knows; markdown is excluded, since prose is not comments.
+
+Markdown gets `/audit-docs` instead — the same instinct applied to `CLAUDE.md`,
+`AGENTS.md`, `README.md`, `REVIEW.md` and `docs/`, weighted towards verifying
+claims against the repo rather than cutting them. Nothing triggers it
+automatically: docs are edited on purpose, where a comment is usually added in
+passing.
 
 Script paths in `settings.json` are written as
 `$RTM_REPOS/claude-code-config/.claude/scripts/…`; `install.sh` rewrites that
