@@ -36,9 +36,13 @@ prompt on first use. Do not add them.
 
 ### Scripts referenced from settings.json
 
-Write the path as `$RTM_REPOS/claude-code-config/.claude/scripts/<name>` —
-`install.sh` rewrites that literal prefix to the install target wherever it
-appears, so a new `statusLine` or hook needs no change to the installer.
+Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"` — the
+config is installed into `~/.claude`, and hook and `statusLine` commands run
+through a shell, so this resolves wherever it is read from with no help from the
+installer. Keep the quotes.
+
+Do not point at the repo checkout. A source path only ever describes one
+machine, and `install.sh` has no way to fix one it hasn't been taught about.
 
 ### claude-mem settings
 

@@ -284,7 +284,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/context-monitor.py"
+    "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/context-monitor.py\""
   },
   "hooks": {
     "Stop": [
@@ -292,12 +292,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/audit-comments-gate.py",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/audit-comments-gate.py\"",
             "timeout": 15
           },
           {
             "type": "command",
-            "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/audit-docs-gate.py",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/audit-docs-gate.py\"",
             "timeout": 15
           }
         ]

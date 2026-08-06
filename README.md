@@ -126,9 +126,9 @@ The two gates are separate scripts rather than one so either can be disabled
 alone. A turn that touches both blocks once, with both reasons.
 
 Script paths in `settings.json` are written as
-`$RTM_REPOS/claude-code-config/.claude/scripts/…`; `install.sh` rewrites that
-prefix to the install target, since `$RTM_REPOS` is not set for every consumer
-of the global config.
+`"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. Hook and `statusLine`
+commands run through a shell, so this resolves against whichever config dir is
+actually in use and needs nothing from the installer.
 
 ## Required Plugins
 
@@ -181,9 +181,8 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, adds the `linear-server` MCP server if missing, rewrites
-`statusLine.command` to the installed script path (so it no longer depends on
-`$RTM_REPOS`), and merges `claude-mem/settings.json` into `~/.claude-mem`.
+`settings.json`, adds the `linear-server` MCP server if missing, and merges
+`claude-mem/settings.json` into `~/.claude-mem`.
 
 ### `claude-mem` settings
 

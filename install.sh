@@ -122,28 +122,6 @@ if (( DO_SESSION_STATE )); then
   done
 fi
 
-# Tracked script paths (statusLine, hooks) resolve via $RTM_REPOS, which is not
-# set for every consumer of the global config. Rewrites the prefix wherever it
-# appears rather than naming each key, so a new hook needs no change here.
-SRC_PREFIX='$RTM_REPOS/claude-code-config/.claude'
-if [[ -f "$SRC/settings.json" ]] && command -v jq >/dev/null; then
-  info "repointing script paths at $TARGET"
-  if (( DRY_RUN )); then
-    printf '    [dry-run] jq rewrite of %s → %s\n' "$SRC_PREFIX" "$TARGET"
-  else
-    tmp="$(mktemp)"
-    # split/join, not gsub — the prefix starts with `$`, which gsub reads as an
-    # anchor and matches nothing.
-    jq --arg src "$SRC_PREFIX" --arg dst "$TARGET" \
-      'walk(if type == "string" and (index($src) != null)
-            then (split($src) | join($dst)) else . end)' \
-      "$TARGET/settings.json" >"$tmp"
-    mv "$tmp" "$TARGET/settings.json"
-  fi
-elif [[ -f "$SRC/settings.json" ]]; then
-  warn "jq not found — statusLine and hooks still depend on \$RTM_REPOS"
-fi
-
 # claude-mem reads ~/.claude-mem/settings.json, which sits outside CLAUDE_CONFIG_DIR
 # and so is never touched by the copy above. Merged key-by-key rather than replaced:
 # the live file also carries provider API keys and CLAUDE_MEM_DATA_DIR, none of which
