@@ -39,8 +39,9 @@ accordingly: **verification matters more here than concision.**
   the answer, say the gap exists. Fabricated documentation is the one failure
   here that cannot be caught by reading the doc.
 - **Honour `$ARGUMENTS`:**
-  - *(none)* — the markdown the branch touches, plus any doc it links to that
-    the change falsified.
+  - *(none)* — the docs the branch touches: `CLAUDE.md`, `AGENTS.md`,
+    `README.md`, `REVIEW.md` and anything under `docs/`. Other markdown, a
+    `SKILL.md` included, needs an explicit path.
   - `<path>…` — audit those files.
   - `--all` — every doc in the repo. Say up front this is the expensive one.
   - `<PR number or URL>` — audit that PR's markdown.

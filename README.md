@@ -112,8 +112,8 @@ a session. State lives under `~/.claude/state/` and is swept after seven days.
 
 The skills share the gates' detectors via `--list`, so an audit covers exactly
 what fired. For comments that means a shallow scan for markers outside string
-literals — `LINE_MARKERS` in the script is the list of file types, and markdown
-is excluded since prose is not comments. For docs it means the four well-known
+literals — `LINE_MARKERS` and `NAME_MARKERS` in the script are the list of file
+types, and markdown is excluded since prose is not comments. For docs it means the four well-known
 filenames plus anything under a `docs/` tree; `CHANGELOG.md` and ad-hoc notes
 are excluded on purpose, because a gate that fires on generated files teaches
 you to ignore it.
@@ -123,7 +123,7 @@ into markdown, which makes that file a touched doc — and the docs gate picks i
 up on its own next turn.
 
 The two gates are separate scripts rather than one so either can be disabled
-alone. A turn that touches both blocks once, with both reasons.
+alone.
 
 Script paths in `settings.json` are written as
 `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. Hook and `statusLine`
