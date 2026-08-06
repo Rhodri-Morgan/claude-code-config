@@ -294,6 +294,11 @@
             "type": "command",
             "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/audit-comments-gate.py",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/audit-docs-gate.py",
+            "timeout": 15
           }
         ]
       }

@@ -19,20 +19,16 @@ audit that concludes "nothing to fix" — false negatives cost a comment nobody
 looks at again, so the checks lean permissive.
 """
 
-import json
 import os
-import subprocess
 import sys
-import time
 
-# Stop-hook plumbing: guidance goes on stderr, machine-readable JSON on stdout,
-# exit 2. Claude Code has no `Stop` member in its hookSpecificOutput union, so
-# additionalContext is silently dropped on this path.
-BLOCK_EXIT = 2
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _audit_gate import (  # noqa: E402
+    already_fired, block, default_branch, git, read_hook_input, skipped_path,
+)
 
 MAX_LISTED = 15
 MAX_ADDED_LINES_PER_FILE = 2000
-STATE_TTL_DAYS = 7
 
 LINE_MARKERS = {
     ".py": ("#",),
@@ -122,28 +118,12 @@ BLOCK_FAMILY = {
 MARKUP_PREFIXES = ("<!--", "-->")
 MARKUP_FAMILY = {".html", ".htm", ".xml", ".vue", ".svelte"}
 
-SKIP_DIR_PARTS = (
-    ".worktrees/", "node_modules/", "vendor/", "dist/", "build/", ".venv/",
-    ".next/", "__pycache__/", ".terraform/", "site-packages/", "coverage/",
-)
-
 SKIP_SUFFIXES = (".lock", ".min.js", ".min.css", ".map", ".snap")
-
-
-def git(args, cwd, check=False):
-    try:
-        out = subprocess.run(
-            ["git"] + args, cwd=cwd, check=check,
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return ""
-    return out.stdout if out.returncode == 0 else ""
 
 
 def markers_for(path):
     """Comment markers for a path, or None if it has no comments worth auditing."""
-    if any(part in path for part in SKIP_DIR_PARTS):
+    if skipped_path(path):
         return None
     if path.endswith(SKIP_SUFFIXES):
         return None
@@ -255,16 +235,6 @@ def parse_diff(diff, findings):
             lineno += 1
 
 
-def default_branch(cwd):
-    ref = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], cwd).strip()
-    if ref.startswith("origin/"):
-        return ref[len("origin/"):]
-    for name in ("main", "master"):
-        if git(["rev-parse", "--verify", "--quiet", name], cwd).strip():
-            return name
-    return ""
-
-
 def collect(cwd, scope="working", base=None, paths=None):
     """Added comment lines for the requested scope, as (path, line, text)."""
     findings = []
@@ -310,23 +280,6 @@ def collect(cwd, scope="working", base=None, paths=None):
     return findings
 
 
-def state_path(session_id, head):
-    root = os.path.join(os.path.expanduser("~"), ".claude", "state", "audit-comments")
-    os.makedirs(root, exist_ok=True)
-    return os.path.join(root, f"{session_id}-{head}")
-
-
-def sweep_state(root):
-    cutoff = time.time() - STATE_TTL_DAYS * 86400
-    try:
-        for name in os.listdir(root):
-            fp = os.path.join(root, name)
-            if os.path.getmtime(fp) < cutoff:
-                os.remove(fp)
-    except OSError:
-        pass
-
-
 def run_list(argv):
     scope = "branch"
     base = None
@@ -355,17 +308,8 @@ def run_list(argv):
 
 
 def run_hook():
-    if os.environ.get("AUDIT_COMMENTS_HOOK") == "0":
-        return 0
-
-    try:
-        payload = json.load(sys.stdin)
-    except (json.JSONDecodeError, ValueError):
-        return 0
-
-    # Set while Claude is already continuing because of a Stop hook. Blocking
-    # again here is how a Stop hook turns into an infinite loop.
-    if payload.get("stop_hook_active"):
+    payload = read_hook_input("AUDIT_COMMENTS_HOOK")
+    if payload is None:
         return 0
 
     cwd = payload.get("cwd") or os.getcwd()
@@ -376,38 +320,26 @@ def run_hook():
     if not findings:
         return 0
 
-    head = (git(["rev-parse", "--short", "HEAD"], cwd).strip() or "nohead")
-    session = payload.get("session_id") or "nosession"
-    marker = state_path(session, head)
-    sweep_state(os.path.dirname(marker))
-    if os.path.exists(marker):
+    if already_fired("audit-comments", payload, cwd):
         return 0
-    try:
-        with open(marker, "w") as fh:
-            fh.write(str(int(time.time())))
-    except OSError:
-        pass
 
     listed = findings[:MAX_LISTED]
     lines = "\n".join(f"  {p}:{n}  {t}" for p, n, t in listed)
     if len(findings) > MAX_LISTED:
         lines += f"\n  ... {len(findings) - MAX_LISTED} more"
 
-    reason = (
+    return block(
         f"audit-comments: {len(findings)} comment line(s) added or changed in the "
         f"working tree.\n\n{lines}\n\n"
         "Audit them with Skill(audit-comments) before finishing. For each one ask: "
         "could a competent reader derive it from the code, the upstream module or "
         "the library docs? will it still be true in six months? does it match how "
-        "the files around it comment? is it as short as the fact allows? Cut, "
-        "rewrite or keep each, then report what changed.\n\n"
+        "the files around it comment? is it as short as the fact allows? Is it "
+        "about this code at all, or about the system — in which case it belongs "
+        "in markdown. Cut, rewrite, move or keep each, then report what "
+        "changed.\n\n"
         "(Fires once per commit per session. AUDIT_COMMENTS_HOOK=0 disables it.)"
     )
-
-    sys.stderr.write(reason)
-    sys.stderr.flush()
-    print(json.dumps({"decision": "block", "reason": reason}), flush=True)
-    return BLOCK_EXIT
 
 
 def main():

@@ -92,31 +92,38 @@ entirely; worth revisiting if that turns out to matter.
 
 ## Hooks
 
-| Event  | Script                     | What it does |
-| ------ | -------------------------- | ------------ |
-| `Stop` | `audit-comments-gate.py`   | Blocks once if the turn added code comments, pointing at `Skill(audit-comments)` |
+| Event  | Script                   | What it does |
+| ------ | ------------------------ | ------------ |
+| `Stop` | `audit-comments-gate.py` | Blocks once if the turn added code comments, pointing at `Skill(audit-comments)` |
+| `Stop` | `audit-docs-gate.py`     | Blocks once if the turn changed a doc, pointing at `Skill(audit-docs)` |
 
-The comment gate exists because comment quality is the most common correction
-on generated code here, and a rule in `CLAUDE.md` only helps if something checks
-it. The script scans the **uncommitted** working tree, not the branch — scoping
-it to the branch would re-litigate a long-lived branch's existing comments at
-the start of every session. `/audit-comments` is the one that covers a whole PR.
+Both exist because comment and doc quality is the most common correction on
+generated work here, and a rule in `CLAUDE.md` only helps if something checks
+it. They share `_audit_gate.py` for the git, state and block-emit halves, so
+their guard semantics cannot drift apart.
 
-It fires once per `session + HEAD`, so committing re-arms it for the next batch
-of work; `AUDIT_COMMENTS_HOOK=0` turns it off for a session. State lives in
-`~/.claude/state/audit-comments/` and is swept after seven days.
+Each scans the **uncommitted** working tree, not the branch — scoping to the
+branch would re-litigate a long-lived branch's existing content at the start of
+every session. The slash commands are the ones that cover a whole PR.
 
-Detection is a shallow scan for comment markers outside string literals — it
-decides whether there is anything to audit, not whether the comments are good.
-The skill shares the same detector via `--list`, so an audit covers exactly what
-the hook flagged. `LINE_MARKERS` in the script is the list of file types it
-knows; markdown is excluded, since prose is not comments.
+Each fires once per `session + HEAD`, so committing re-arms it for the next
+batch of work. `AUDIT_COMMENTS_HOOK=0` and `AUDIT_DOCS_HOOK=0` turn them off for
+a session. State lives under `~/.claude/state/` and is swept after seven days.
 
-Markdown gets `/audit-docs` instead — the same instinct applied to `CLAUDE.md`,
-`AGENTS.md`, `README.md`, `REVIEW.md` and `docs/`, weighted towards verifying
-claims against the repo rather than cutting them. Nothing triggers it
-automatically: docs are edited on purpose, where a comment is usually added in
-passing.
+The skills share the gates' detectors via `--list`, so an audit covers exactly
+what fired. For comments that means a shallow scan for markers outside string
+literals — `LINE_MARKERS` in the script is the list of file types, and markdown
+is excluded since prose is not comments. For docs it means the four well-known
+filenames plus anything under a `docs/` tree; `CHANGELOG.md` and ad-hoc notes
+are excluded on purpose, because a gate that fires on generated files teaches
+you to ignore it.
+
+They do not chain. `audit-comments` moves system-level facts out of comments and
+into markdown, which makes that file a touched doc — and the docs gate picks it
+up on its own next turn.
+
+The two gates are separate scripts rather than one so either can be disabled
+alone. A turn that touches both blocks once, with both reasons.
 
 Script paths in `settings.json` are written as
 `$RTM_REPOS/claude-code-config/.claude/scripts/…`; `install.sh` rewrites that

@@ -1,7 +1,7 @@
 ---
 name: audit-comments
 description: Audit the code comments in the files a change touches — cut the ones a reader could derive from the code, rewrite the ones that will go stale, move the ones that belong in markdown, and match the conventions of the surrounding files. Use when the user says "audit comments", "check the comments", "review my comments", or after writing code that adds comments, before committing or opening a PR.
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git merge-base:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(python3:*), Read, Edit, Glob, Grep, Skill(audit-docs)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git merge-base:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(python3:*), Read, Edit, Glob, Grep
 user-invocable: true
 ---
 
@@ -196,9 +196,9 @@ Where it goes instead:
 Move it, don't duplicate it. Then either leave nothing behind, or leave a one
 line pointer if the code genuinely needs the reader to know the doc exists.
 
-Having moved anything, audit the destination with `Skill(audit-docs)` — text
-lands in a doc at whatever quality it had as a comment, and the doc's rules are
-not the same ones.
+Stop once the fact is in the right file. Don't audit the destination from here —
+writing to it makes it a touched doc, which is what the `audit-docs` gate keys
+on, so it gets its own pass with its own rules rather than a borrowed one.
 
 The narrow case still belongs in the code: a constraint that happens to come
 from another system, but which only affects *this line*, is a comment.
@@ -267,8 +267,9 @@ Make the edits, unless `--dry-run`. Cuts and rewrites only — do not touch the
 code the comments sit on. If a comment is only fixable by renaming the thing it
 describes, say that instead of doing it; the rename is a separate change.
 
-For anything judged **to markdown**, write it into the destination doc, then run
-`Skill(audit-docs)` over that doc before finishing.
+For anything judged **to markdown**, write it into the destination doc and stop
+there. Auditing that doc is `audit-docs`' job, and touching it is what arms that
+gate.
 
 ### Step 6: Report
 
@@ -316,4 +317,6 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 - The hook fires once per `session + HEAD`, so committing re-arms it for the
   next batch of work. State lives in `~/.claude/state/audit-comments/` and is
   swept after seven days.
-- `Skill(audit-docs)` is the counterpart, and check 8 is the seam between them.
+- `Skill(audit-docs)` is the counterpart, and check 8 is the seam. They do not
+  call each other: a fact moved into markdown makes that file a touched doc, and
+  the `audit-docs` gate picks it up on its own.

@@ -183,16 +183,17 @@ Git records the change:
 !git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
-Strip the `origin/` prefix; **never assume `main`**. Then list the markdown the
-change touches:
+Strip the `origin/` prefix; **never assume `main`**. Then list the docs the
+change touches. The Stop hook and this skill share one detector, so an audit
+covers exactly what the hook flagged:
 
 ```
-!git diff --name-only <base>...HEAD -- "*.md"
-!git ls-files --others --exclude-standard -- "*.md"
+!python3 "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/audit-docs-gate.py" --list --scope branch
 ```
 
-The second command matters: a doc that was just created is untracked and no diff
-reaches it.
+`--scope working` for uncommitted only, `--scope staged` for the index. Trailing
+paths restrict it. Output is `path<TAB>+added/-removed`; the churn figure is
+only there to help you order the work.
 
 If `$ARGUMENTS` names a PR, use `gh pr diff <n> --name-only` instead. If nothing
 comes back and no paths were given, say so and stop.
@@ -261,10 +262,15 @@ Unverified (1)
 
 - **Doc rot is silent.** Nothing fails when a doc goes stale, which is why this
   skill weights verification over style. If time is short, do check 1 and stop.
-- `Skill(audit-comments)` hands work here via its check 8, when a fact turns out
-  to be about the system rather than the line it was written on.
-- The `Stop` hook behind `audit-comments` deliberately ignores markdown, so this
-  skill is invoked rather than triggered. Docs are usually edited on purpose,
-  where a comment is usually added in passing.
+- **`scripts/audit-docs-gate.py` runs on `Stop`** and blocks once per commit per
+  session when a doc changes in the working tree, the same shape as the comment
+  gate. `AUDIT_DOCS_HOOK=0` disables it.
+- **Which files count is the script's business** — `DOC_NAMES` and the `docs/`
+  rule in the gate are the list. Markdown that nobody maintains claim by claim
+  (`CHANGELOG.md`, licences) is excluded deliberately: firing on generated files
+  teaches the reader to ignore the gate.
+- `Skill(audit-comments)` feeds this via its check 8, but does not call it. A
+  fact moved out of a comment lands in a doc, which makes that doc a touched
+  file, which arms this gate on its own.
 - On a repo whose `docs/` is linked from `AGENTS.md`, that index is also a
   check: a doc nothing links to is a doc nothing reads.
