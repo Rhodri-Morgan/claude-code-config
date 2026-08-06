@@ -1,10 +1,8 @@
 """
 Shared plumbing for the audit-* Stop hooks.
 
-Both gates answer the same question — did this turn produce something worth
-auditing, and have we already said so — and differ only in what they look for.
-Keeping the git, state and block-emit halves here is what stops the two from
-drifting into subtly different guard semantics.
+The two gates differ only in what they look for. Keeping the git, state and
+block-emit halves here is what stops their guard semantics from drifting apart.
 """
 
 import json
@@ -76,10 +74,9 @@ def sweep_state(root):
 def read_hook_input(env_switch):
     """Hook payload, or None if this fire should be a no-op.
 
-    Covers the three ways a Stop hook should stay quiet: the kill switch, a
-    payload it can't parse, and `stop_hook_active` — which is set while Claude
-    is already continuing because of a Stop hook, and is what otherwise turns a
-    blocking hook into an infinite loop.
+    `stop_hook_active` is set while Claude is already continuing because of a
+    Stop hook — returning a payload there is what turns a blocking hook into an
+    infinite loop.
     """
     if os.environ.get(env_switch) == "0":
         return None
