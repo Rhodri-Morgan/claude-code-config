@@ -90,6 +90,34 @@ servers' tools, so they can reach a gated tool without triggering its `ask`
 rule. Left allowed on the basis that gating them would gate the gateway
 entirely; worth revisiting if that turns out to matter.
 
+## Hooks
+
+| Event  | Script                     | What it does |
+| ------ | -------------------------- | ------------ |
+| `Stop` | `audit-comments-gate.py`   | Blocks once if the turn added code comments, pointing at `Skill(audit-comments)` |
+
+The comment gate exists because comment quality is the most common correction
+on generated code here, and a rule in `CLAUDE.md` only helps if something checks
+it. The script scans the **uncommitted** working tree, not the branch — scoping
+it to the branch would re-litigate a long-lived branch's existing comments at
+the start of every session. `/audit-comments` is the one that covers a whole PR.
+
+It fires once per `session + HEAD`, so committing re-arms it for the next batch
+of work; `AUDIT_COMMENTS_HOOK=0` turns it off for a session. State lives in
+`~/.claude/state/audit-comments/` and is swept after seven days.
+
+Detection is a shallow scan for comment markers outside string literals — it
+decides whether there is anything to audit, not whether the comments are good.
+The skill shares the same detector via `--list`, so an audit covers exactly what
+the hook flagged. Roughly 60 extensions across the `#`, `//`, `--`, `/* */` and
+`<!-- -->` families, plus `Makefile`-style filenames; the full table is in the
+skill. Markdown, JSON and lockfiles are excluded.
+
+Script paths in `settings.json` are written as
+`$RTM_REPOS/claude-code-config/.claude/scripts/…`; `install.sh` rewrites that
+prefix to the install target, since `$RTM_REPOS` is not set for every consumer
+of the global config.
+
 ## Required Plugins
 
 | Plugin       | Marketplace                                                             | Install                                 | Description                          |

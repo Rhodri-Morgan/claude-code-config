@@ -122,20 +122,26 @@ if (( DO_SESSION_STATE )); then
   done
 fi
 
-# The tracked statusLine command resolves via $RTM_REPOS, which is not set for
-# every consumer of the global config — point it at the installed copy instead.
+# Tracked script paths (statusLine, hooks) resolve via $RTM_REPOS, which is not
+# set for every consumer of the global config. Rewrites the prefix wherever it
+# appears rather than naming each key, so a new hook needs no change here.
+SRC_PREFIX='$RTM_REPOS/claude-code-config/.claude'
 if [[ -f "$SRC/settings.json" ]] && command -v jq >/dev/null; then
-  info "pointing statusLine at $TARGET/scripts/context-monitor.py"
+  info "repointing script paths at $TARGET"
   if (( DRY_RUN )); then
-    printf '    [dry-run] jq statusLine.command rewrite\n'
+    printf '    [dry-run] jq rewrite of %s → %s\n' "$SRC_PREFIX" "$TARGET"
   else
     tmp="$(mktemp)"
-    jq --arg cmd "python3 $TARGET/scripts/context-monitor.py" \
-      '.statusLine.command = $cmd' "$TARGET/settings.json" >"$tmp"
+    # split/join, not gsub — the prefix starts with `$`, which gsub reads as an
+    # anchor and matches nothing.
+    jq --arg src "$SRC_PREFIX" --arg dst "$TARGET" \
+      'walk(if type == "string" and (index($src) != null)
+            then (split($src) | join($dst)) else . end)' \
+      "$TARGET/settings.json" >"$tmp"
     mv "$tmp" "$TARGET/settings.json"
   fi
 elif [[ -f "$SRC/settings.json" ]]; then
-  warn "jq not found — statusLine still depends on \$RTM_REPOS"
+  warn "jq not found — statusLine and hooks still depend on \$RTM_REPOS"
 fi
 
 # claude-mem reads ~/.claude-mem/settings.json, which sits outside CLAUDE_CONFIG_DIR

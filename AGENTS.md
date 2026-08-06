@@ -34,6 +34,12 @@ Servers carrying environment-specific credentials (ClickHouse, Grafana) are
 added per machine and stay out of the allowlist deliberately, so their tools
 prompt on first use. Do not add them.
 
+### Scripts referenced from settings.json
+
+Write the path as `$RTM_REPOS/claude-code-config/.claude/scripts/<name>` —
+`install.sh` rewrites that literal prefix to the install target wherever it
+appears, so a new `statusLine` or hook needs no change to the installer.
+
 ### claude-mem settings
 
 `claude-mem/settings.json` is the one managed file outside `.claude/`, because

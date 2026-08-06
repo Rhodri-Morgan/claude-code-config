@@ -35,6 +35,7 @@
       "Skill(cleanup-worktrees)",
       "Skill(cleanup-docker)",
       "Skill(update-branch)",
+      "Skill(audit-comments)",
       "mcp__plugin_context7_context7",
       "mcp__plugin_claude-mem_mcp-search",
       "mcp__plugin_posthog_posthog",
@@ -283,6 +284,19 @@
   "statusLine": {
     "type": "command",
     "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/context-monitor.py"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/audit-comments-gate.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
