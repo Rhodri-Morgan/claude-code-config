@@ -9,7 +9,8 @@ Two modes:
         Skill(audit-docs) so the skill and the hook agree on the target set.
 
     audit-docs-gate.py               (Stop hook — reads the hook JSON on stdin)
-        Blocks the turn once if docs were touched, pointing at the skill.
+        Blocks the turn once if docs were touched, pointing at the audit-docs
+        subagent.
 
 Only the docs someone actually relies on count — the four well-known filenames
 and anything under a docs/ tree. A CHANGELOG, a scratch note or a generated PR
@@ -152,12 +153,11 @@ def run_hook():
     return block(
         f"audit-docs: {len(counts)} doc(s) changed in the working tree.\n\n"
         f"{lines}\n\n"
-        "Audit them with Skill(audit-docs) before finishing. Docs fail by going "
-        "stale silently — nothing compiles them — so verify first: does every "
-        "path, target, flag, name and count still match the repo? Then: does "
-        "this doc own this fact, or does another one already claim it? Will it "
-        "still be true in six months? Is it earning its place, given AGENTS.md "
-        "and CLAUDE.md are read on every turn?\n\n"
+        "Audit them before finishing, by spawning the `audit-docs` subagent "
+        "(Agent tool, subagent_type: \"audit-docs\"). It runs Skill(audit-docs) "
+        "on Haiku, verifies each claim against the repo and applies the "
+        "corrections itself; relay its report rather than auditing them "
+        "yourself.\n\n"
         "(Fires once per commit per session. AUDIT_DOCS_HOOK=0 disables it.)"
     )
 

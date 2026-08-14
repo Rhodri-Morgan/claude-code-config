@@ -265,7 +265,9 @@ Unverified (1)
   skill weights verification over style. If time is short, do check 1 and stop.
 - **`scripts/audit-docs-gate.py` runs on `Stop`** and blocks once per commit per
   session when a doc changes in the working tree, the same shape as the comment
-  gate. `AUDIT_DOCS_HOOK=0` disables it.
+  gate. It hands the audit to the `audit-docs` subagent, which is where the
+  Haiku pin lives — so you may be reading this as that agent rather than in the
+  session that made the edits. `AUDIT_DOCS_HOOK=0` disables it.
 - **Which files count is the script's business** — `DOC_NAMES` and the `docs/`
   rule in the gate are the list. Markdown that nobody maintains claim by claim
   (`CHANGELOG.md`, licences) is excluded deliberately: firing on generated files

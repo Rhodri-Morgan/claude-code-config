@@ -21,6 +21,8 @@
       "Agent(Plan)",
       "Agent(general-purpose)",
       "Agent(data-scientist)",
+      "Agent(audit-comments)",
+      "Agent(audit-docs)",
       "Skill(commit)",
       "Skill(branch)",
       "Skill(pull-request)",

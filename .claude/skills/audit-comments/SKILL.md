@@ -304,9 +304,12 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 
 - **The Stop hook is the automatic half.** `scripts/audit-comments-gate.py` runs
   on `Stop`, scans the uncommitted working tree, and blocks once per commit per
-  session if comments were added. It scopes to the working tree rather than the
-  branch so a long-lived branch's existing comments don't get re-litigated every
-  session; the slash command is the one that covers the whole PR.
+  session if comments were added, handing the audit to the `audit-comments`
+  subagent — which is where the Haiku pin lives, so you may be reading this as
+  that agent rather than in the session that wrote the comments. It scopes to
+  the working tree rather than the branch so a long-lived branch's existing
+  comments don't get re-litigated every session; the slash command is the one
+  that covers the whole PR.
 - **`AUDIT_COMMENTS_HOOK=0` disables the hook** for a session without touching
   settings.
 - **Which file types count is the script's business**, not this document's —

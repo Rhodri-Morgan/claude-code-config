@@ -10,7 +10,8 @@ Two modes:
         as a comment.
 
     audit-comments-gate.py            (Stop hook — reads the hook JSON on stdin)
-        Blocks the turn once if comments were added, pointing at the skill.
+        Blocks the turn once if comments were added, pointing at the
+        audit-comments subagent.
 
 Detection is deliberately shallow: a marker at the start of a line, or one
 outside any string on a line of code. Judging the comments is the skill's job;
@@ -331,13 +332,10 @@ def run_hook():
     return block(
         f"audit-comments: {len(findings)} comment line(s) added or changed in the "
         f"working tree.\n\n{lines}\n\n"
-        "Audit them with Skill(audit-comments) before finishing. For each one ask: "
-        "could a competent reader derive it from the code, the upstream module or "
-        "the library docs? will it still be true in six months? does it match how "
-        "the files around it comment? is it as short as the fact allows? Is it "
-        "about this code at all, or about the system — in which case it belongs "
-        "in markdown. Cut, rewrite, move or keep each, then report what "
-        "changed.\n\n"
+        "Audit them before finishing, by spawning the `audit-comments` subagent "
+        "(Agent tool, subagent_type: \"audit-comments\"). It runs "
+        "Skill(audit-comments) on Haiku and applies the cuts, rewrites and moves "
+        "itself; relay its report rather than auditing them yourself.\n\n"
         "(Fires once per commit per session. AUDIT_COMMENTS_HOOK=0 disables it.)"
     )
 

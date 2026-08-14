@@ -94,13 +94,20 @@ entirely; worth revisiting if that turns out to matter.
 
 | Event  | Script                   | What it does |
 | ------ | ------------------------ | ------------ |
-| `Stop` | `audit-comments-gate.py` | Blocks once if the turn added code comments, pointing at `Skill(audit-comments)` |
-| `Stop` | `audit-docs-gate.py`     | Blocks once if the turn changed a doc, pointing at `Skill(audit-docs)` |
+| `Stop` | `audit-comments-gate.py` | Blocks once if the turn added code comments, pointing at `Agent(audit-comments)` |
+| `Stop` | `audit-docs-gate.py`     | Blocks once if the turn changed a doc, pointing at `Agent(audit-docs)` |
 
 Both exist because comment and doc quality is the most common correction on
 generated work here, and a rule in `CLAUDE.md` only helps if something checks
 it. They share `_audit_gate.py` for the git, state and block-emit halves, so
 their guard semantics cannot drift apart.
+
+Neither gate asks the main session to do the audit. Each points at a subagent —
+`agents/audit-comments.md` and `agents/audit-docs.md`, both pinned to `haiku` —
+which runs the matching skill, applies the edits and reports back. A hook has no
+say in the model, so the pin lives in the agent definition and the block message
+only names the subagent. Reading every touched file in full is the expensive
+half of an audit, and this keeps it out of the main context.
 
 Each scans the **uncommitted** working tree, not the branch — scoping to the
 branch would re-litigate a long-lived branch's existing content at the start of
