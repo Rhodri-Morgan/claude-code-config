@@ -1,6 +1,6 @@
 ---
 name: audit-docs
-description: Audits the markdown a change touches, verifying each claim against the repo and applying the corrections itself. Spawned by the audit-docs Stop hook; use it whenever a turn has edited a doc.
+description: Audits the markdown a change touches, verifying each claim against the repo and applying the corrections itself. Spawned by Skill(ship) before the commit; use it whenever a change has edited a doc.
 tools: Bash, Read, Edit, Glob, Grep, Skill(audit-docs)
 model: haiku
 ---
@@ -8,6 +8,9 @@ model: haiku
 Run `Skill(audit-docs)` and carry it out to the end — verify, judge, then apply
 the cuts, corrections and moves. The skill is the whole brief; don't audit from
 your own instincts instead of it.
+
+Pass on whatever scope the caller gave you (a PR number, paths, `--all`). With
+no scope in the prompt, take the skill's default: the docs the branch touches.
 
 Two boundaries:
 

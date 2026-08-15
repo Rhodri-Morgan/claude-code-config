@@ -90,52 +90,63 @@ servers' tools, so they can reach a gated tool without triggering its `ask`
 rule. Left allowed on the basis that gating them would gate the gateway
 entirely; worth revisiting if that turns out to matter.
 
-## Hooks
+## Audits
 
-| Event  | Script                   | What it does |
-| ------ | ------------------------ | ------------ |
-| `Stop` | `audit-comments-gate.py` | Blocks once if the turn added code comments, pointing at `Agent(audit-comments)` |
-| `Stop` | `audit-docs-gate.py`     | Blocks once if the turn changed a doc, pointing at `Agent(audit-docs)` |
+Comment and doc quality is the most common correction on generated work here,
+and a rule in `CLAUDE.md` only helps if something checks it. Two audits do the
+checking, and `/ship` is where they run:
 
-Both exist because comment and doc quality is the most common correction on
-generated work here, and a rule in `CLAUDE.md` only helps if something checks
-it. They share `_audit_gate.py` for the git, state and block-emit halves, so
-their guard semantics cannot drift apart.
+| Detector                 | Finds                              | Hands off to        |
+| ------------------------ | ---------------------------------- | ------------------- |
+| `audit-comments-gate.py` | Comment lines the branch added     | `Agent(audit-comments)` |
+| `audit-docs-gate.py`     | Docs the branch touched            | `Agent(audit-docs)` |
 
-Neither gate asks the main session to do the audit. Each points at a subagent —
+`Skill(ship)` runs both with `--list --scope branch` before it commits, and
+spawns a subagent only for a detector that reported something. A branch that
+touched no comments and no docs therefore costs two script runs and nothing
+else.
+
+**This used to be a `Stop` hook and is not any more.** Firing at the end of
+every turn re-ran the same audit over the same branch a dozen times per PR,
+which cost far more than it caught. Once per PR is the right frequency, and
+`/ship` is the one command that marks a PR.
+
+The audit runs **before** the commit, not after the PR, so the edits it makes
+land inside the commit that opens the PR rather than trailing it in a
+follow-up push.
+
+Neither audit asks the main session to do the work. Each goes to a subagent —
 `agents/audit-comments.md` and `agents/audit-docs.md`, both pinned to `haiku` —
-which runs the matching skill, applies the edits and reports back. A hook has no
-say in the model, so the pin lives in the agent definition and the block message
-only names the subagent. Reading every touched file in full is the expensive
-half of an audit, and this keeps it out of the main context.
+which runs the matching skill, applies the edits and reports back. Reading every
+touched file in full is the expensive half of an audit, and this keeps it out of
+the main context.
 
-Each scans the **uncommitted** working tree, not the branch — scoping to the
-branch would re-litigate a long-lived branch's existing content at the start of
-every session. The slash commands are the ones that cover a whole PR.
-
-Each fires once per `session + HEAD`, so committing re-arms it for the next
-batch of work. `AUDIT_COMMENTS_HOOK=0` and `AUDIT_DOCS_HOOK=0` turn them off for
-a session. State lives under `~/.claude/state/` and is swept after seven days.
-
-The skills share the gates' detectors via `--list`, so an audit covers exactly
-what fired. For comments that means a shallow scan for markers outside string
+The skills share the detectors via `--list`, so an audit covers exactly what was
+reported. For comments that means a shallow scan for markers outside string
 literals — `LINE_MARKERS` and `NAME_MARKERS` in the script are the list of file
-types, and markdown is excluded since prose is not comments. For docs it means the four well-known
-filenames plus anything under a `docs/` tree; `CHANGELOG.md` and ad-hoc notes
-are excluded on purpose, because a gate that fires on generated files teaches
-you to ignore it.
+types, and markdown is excluded since prose is not comments. For docs it means
+the four well-known filenames plus anything under a `docs/` tree; generated and
+mechanical markdown like `CHANGELOG.md`, `LICENSE.md` and `CODE_OF_CONDUCT.md`
+are excluded on purpose, because a detector that reports files nobody maintains
+claim by claim teaches you to ignore it.
 
 They do not chain. `audit-comments` moves system-level facts out of comments and
-into markdown, which makes that file a touched doc — and the docs gate picks it
-up on its own next turn.
+into markdown, which makes that file a touched doc — but the two run
+concurrently, so the docs audit picks it up on the next `/ship`.
 
-The two gates are separate scripts rather than one so either can be disabled
-alone.
+The two detectors are separate scripts rather than one so either can be dropped
+from `/ship` alone. They share `_audit_gate.py` for the git half, so their scope
+semantics cannot drift apart.
 
-Script paths in `settings.json` are written as
-`"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. Hook and `statusLine`
-commands run through a shell, so this resolves against whichever config dir is
-actually in use and needs nothing from the installer.
+Both are also available on demand as `/audit-comments` and `/audit-docs`:
+
+- `/audit-comments` accepts a scope (`--staged`, `--working`), a PR number, paths, or `--dry-run`.
+- `/audit-docs` accepts paths, a PR number, `--all`, or `--dry-run`.
+
+The `statusLine` command in `settings.json` is written as
+`"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. It runs through a shell, so
+this resolves against whichever config dir is actually in use and needs nothing
+from the installer.
 
 ## Required Plugins
 
@@ -203,10 +214,11 @@ Tracked keys win; anything else in the target survives. `CLAUDE_CODE_PATH` is
 resolved at install time from `command -v claude` rather than tracked, since it
 is machine-specific.
 
-Three of the tracked values exist to keep the `Stop` hook from stalling every
-turn. That hook is synchronous — it polls for its summary for up to 110s, against
-Claude Code's own 120s hook timeout — so anything that stops a summary completing
-costs you two minutes per turn, in every open session:
+Three of the tracked values exist to keep claude-mem's own `Stop` hook — which
+this repo does not configure and cannot remove — from stalling every turn. That
+hook is synchronous: it polls for its summary for up to 110s, against Claude
+Code's own 120s hook timeout, so anything that stops a summary completing costs
+you two minutes per turn, in every open session:
 
 | Key | Value | Why |
 | --- | ----- | --- |

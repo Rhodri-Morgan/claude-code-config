@@ -263,17 +263,17 @@ Unverified (1)
 
 - **Doc rot is silent.** Nothing fails when a doc goes stale, which is why this
   skill weights verification over style. If time is short, do check 1 and stop.
-- **`scripts/audit-docs-gate.py` runs on `Stop`** and blocks once per commit per
-  session when a doc changes in the working tree, the same shape as the comment
-  gate. It hands the audit to the `audit-docs` subagent, which is where the
-  Haiku pin lives — so you may be reading this as that agent rather than in the
-  session that made the edits. `AUDIT_DOCS_HOOK=0` disables it.
+- **`Skill(ship)` runs `scripts/audit-docs-gate.py --list --scope branch`**
+  before committing, and spawns the `audit-docs` subagent only if that reported
+  a touched doc — the same shape as the comment detector. The subagent is where
+  the Haiku pin lives, so you may be reading this as that agent rather than in
+  the session that made the edits.
 - **Which files count is the script's business** — `DOC_NAMES` and the `docs/`
-  rule in the gate are the list. Markdown that nobody maintains claim by claim
-  (`CHANGELOG.md`, licences) is excluded deliberately: firing on generated files
-  teaches the reader to ignore the gate.
-- `Skill(audit-comments)` feeds this via its check 8, but does not call it. A
-  fact moved out of a comment lands in a doc, which makes that doc a touched
-  file, which arms this gate on its own.
+  rule in the detector are the list. Markdown that nobody maintains claim by
+  claim (`CHANGELOG.md`, licences) is excluded deliberately: reporting generated
+  files teaches the reader to ignore the list.
+- `Skill(audit-comments)` feeds this via its check 8, but does not call it, and
+  under `/ship` the two run concurrently. A fact it moves out of a comment into
+  a doc is therefore audited on the *next* `/ship`, not this one.
 - On a repo whose `docs/` is linked from `AGENTS.md`, that index is also a
   check: a doc nothing links to is a doc nothing reads.
