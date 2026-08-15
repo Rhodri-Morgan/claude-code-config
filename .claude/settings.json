@@ -21,6 +21,8 @@
       "Agent(Plan)",
       "Agent(general-purpose)",
       "Agent(data-scientist)",
+      "Agent(audit-comments)",
+      "Agent(audit-docs)",
       "Skill(commit)",
       "Skill(branch)",
       "Skill(pull-request)",
@@ -35,6 +37,8 @@
       "Skill(cleanup-worktrees)",
       "Skill(cleanup-docker)",
       "Skill(update-branch)",
+      "Skill(audit-comments)",
+      "Skill(audit-docs)",
       "mcp__plugin_context7_context7",
       "mcp__plugin_claude-mem_mcp-search",
       "mcp__plugin_posthog_posthog",
@@ -282,7 +286,25 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "python3 $RTM_REPOS/claude-code-config/.claude/scripts/context-monitor.py"
+    "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/context-monitor.py\""
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/audit-comments-gate.py\"",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/audit-docs-gate.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   },
   "enabledPlugins": {
     "pyright-lsp@claude-plugins-official": true,
@@ -320,7 +342,7 @@
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
   "theme": "dark",
-  "tui": "fullscreen",
+  "tui": "default",
   "teammateMode": "tmux",
   "autoCompactEnabled": true,
   "fileCheckpointingEnabled": false,

@@ -122,22 +122,6 @@ if (( DO_SESSION_STATE )); then
   done
 fi
 
-# The tracked statusLine command resolves via $RTM_REPOS, which is not set for
-# every consumer of the global config — point it at the installed copy instead.
-if [[ -f "$SRC/settings.json" ]] && command -v jq >/dev/null; then
-  info "pointing statusLine at $TARGET/scripts/context-monitor.py"
-  if (( DRY_RUN )); then
-    printf '    [dry-run] jq statusLine.command rewrite\n'
-  else
-    tmp="$(mktemp)"
-    jq --arg cmd "python3 $TARGET/scripts/context-monitor.py" \
-      '.statusLine.command = $cmd' "$TARGET/settings.json" >"$tmp"
-    mv "$tmp" "$TARGET/settings.json"
-  fi
-elif [[ -f "$SRC/settings.json" ]]; then
-  warn "jq not found — statusLine still depends on \$RTM_REPOS"
-fi
-
 # claude-mem reads ~/.claude-mem/settings.json, which sits outside CLAUDE_CONFIG_DIR
 # and so is never touched by the copy above. Merged key-by-key rather than replaced:
 # the live file also carries provider API keys and CLAUDE_MEM_DATA_DIR, none of which

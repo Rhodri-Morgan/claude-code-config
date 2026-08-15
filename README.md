@@ -90,6 +90,53 @@ servers' tools, so they can reach a gated tool without triggering its `ask`
 rule. Left allowed on the basis that gating them would gate the gateway
 entirely; worth revisiting if that turns out to matter.
 
+## Hooks
+
+| Event  | Script                   | What it does |
+| ------ | ------------------------ | ------------ |
+| `Stop` | `audit-comments-gate.py` | Blocks once if the turn added code comments, pointing at `Agent(audit-comments)` |
+| `Stop` | `audit-docs-gate.py`     | Blocks once if the turn changed a doc, pointing at `Agent(audit-docs)` |
+
+Both exist because comment and doc quality is the most common correction on
+generated work here, and a rule in `CLAUDE.md` only helps if something checks
+it. They share `_audit_gate.py` for the git, state and block-emit halves, so
+their guard semantics cannot drift apart.
+
+Neither gate asks the main session to do the audit. Each points at a subagent —
+`agents/audit-comments.md` and `agents/audit-docs.md`, both pinned to `haiku` —
+which runs the matching skill, applies the edits and reports back. A hook has no
+say in the model, so the pin lives in the agent definition and the block message
+only names the subagent. Reading every touched file in full is the expensive
+half of an audit, and this keeps it out of the main context.
+
+Each scans the **uncommitted** working tree, not the branch — scoping to the
+branch would re-litigate a long-lived branch's existing content at the start of
+every session. The slash commands are the ones that cover a whole PR.
+
+Each fires once per `session + HEAD`, so committing re-arms it for the next
+batch of work. `AUDIT_COMMENTS_HOOK=0` and `AUDIT_DOCS_HOOK=0` turn them off for
+a session. State lives under `~/.claude/state/` and is swept after seven days.
+
+The skills share the gates' detectors via `--list`, so an audit covers exactly
+what fired. For comments that means a shallow scan for markers outside string
+literals — `LINE_MARKERS` and `NAME_MARKERS` in the script are the list of file
+types, and markdown is excluded since prose is not comments. For docs it means the four well-known
+filenames plus anything under a `docs/` tree; `CHANGELOG.md` and ad-hoc notes
+are excluded on purpose, because a gate that fires on generated files teaches
+you to ignore it.
+
+They do not chain. `audit-comments` moves system-level facts out of comments and
+into markdown, which makes that file a touched doc — and the docs gate picks it
+up on its own next turn.
+
+The two gates are separate scripts rather than one so either can be disabled
+alone.
+
+Script paths in `settings.json` are written as
+`"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. Hook and `statusLine`
+commands run through a shell, so this resolves against whichever config dir is
+actually in use and needs nothing from the installer.
+
 ## Required Plugins
 
 | Plugin       | Marketplace                                                             | Install                                 | Description                          |
@@ -141,9 +188,8 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, adds the `linear-server` MCP server if missing, rewrites
-`statusLine.command` to the installed script path (so it no longer depends on
-`$RTM_REPOS`), and merges `claude-mem/settings.json` into `~/.claude-mem`.
+`settings.json`, adds the `linear-server` MCP server if missing, and merges
+`claude-mem/settings.json` into `~/.claude-mem`.
 
 ### `claude-mem` settings
 
