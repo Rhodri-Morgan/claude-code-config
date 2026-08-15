@@ -39,6 +39,20 @@
       "Skill(update-branch)",
       "Skill(audit-comments)",
       "Skill(audit-docs)",
+      "Skill(caveman:caveman)",
+      "Skill(caveman:caveman-help)",
+      "Skill(caveman:caveman-stats)",
+      "Skill(caveman:caveman-review)",
+      "Skill(caveman:caveman-commit)",
+      "Skill(caveman:caveman-explore)",
+      "Skill(caveman:caveman-compress)",
+      "Skill(caveman:cavecrew)",
+      "Skill(caveman:investigate-first)",
+      "Skill(caveman:lean-build)",
+      "Skill(caveman:migration)",
+      "Skill(caveman:safe-refactor)",
+      "Skill(caveman:surgical-patch)",
+      "Skill(caveman:verify-and-stop)",
       "mcp__plugin_context7_context7",
       "mcp__plugin_claude-mem_mcp-search",
       "mcp__plugin_posthog_posthog",
@@ -238,6 +252,12 @@
       "mcp__MCP_DOCKER__mcp-add",
       "mcp__MCP_DOCKER__mcp-remove",
       "mcp__MCP_DOCKER__mcp-config-set",
+      "Skill(caveman:caveman-setup)",
+      "Skill(caveman:caveman-discover)",
+      "Skill(caveman:caveman-learn)",
+      "Skill(caveman:caveman-manage)",
+      "Skill(caveman:caveman-optimize)",
+      "Skill(caveman:caveman-evidence-review)",
       "Bash(*gh workflow enable*)",
       "Bash(*gh workflow disable*)",
       "Bash(*gh api:*)",
@@ -297,7 +317,8 @@
     "warp@claude-code-warp": true,
     "posthog@claude-plugins-official": true,
     "sentry-mcp@sentry-mcp": true,
-    "figma@claude-plugins-official": true
+    "figma@claude-plugins-official": true,
+    "caveman@caveman": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -316,6 +337,12 @@
       "source": {
         "source": "github",
         "repo": "getsentry/sentry-mcp"
+      }
+    },
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
       }
     }
   },

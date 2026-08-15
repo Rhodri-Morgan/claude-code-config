@@ -155,6 +155,7 @@ from the installer.
 | `claude-mem` | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)       | `/plugin install claude-mem`             | Cross-session persistent memory      |
 | `warp`       | [warpdotdev/claude-code-warp](https://github.com/warpdotdev/claude-code-warp) | `/plugin install warp@claude-code-warp` | Warp terminal integration            |
 | `sentry-mcp` | [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp)         | `/plugin install sentry-mcp@sentry-mcp` | Sentry MCP server (errors, traces)   |
+| `caveman`    | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)       | `/plugin install caveman@caveman`       | Compressed output mode — `/caveman`, plus `caveman-compress`, `caveman-stats` and `cavecrew` skills |
 
 These are declared in `.claude/settings.json` but their content must be fetched
 after cloning — `./install.sh` does this, or do it by hand:
@@ -168,7 +169,16 @@ after cloning — `./install.sh` does this, or do it by hand:
 
 /plugin marketplace add getsentry/sentry-mcp
 /plugin install sentry-mcp@sentry-mcp
+
+/plugin marketplace add JuliusBrussee/caveman
+/plugin install caveman@caveman
 ```
+
+`caveman` needs nothing per repo — its `SessionStart` hook keys off `~/.claude`,
+so the mode applies everywhere. Its `/caveman-init` command writes rule files for
+Cursor, Windsurf, Cline, Copilot and opencode and appends the same rule to
+`AGENTS.md`; deliberately not run here, since nothing reads this repo but Claude
+Code.
 
 ## Install
 
