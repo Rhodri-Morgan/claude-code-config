@@ -45,7 +45,7 @@ Everything below is that test applied along a different axis.
 - **Honour `$ARGUMENTS`:**
   - *(none)* — everything the branch adds over its base, committed and not.
   - `--staged` — the staged diff only.
-  - `--working` — uncommitted changes only. This is what the Stop hook uses.
+  - `--working` — uncommitted changes only.
   - `<PR number or URL>` — audit that PR's diff.
   - `<path>…` — restrict to those files.
   - `--dry-run` — report the verdicts, change nothing.
@@ -302,24 +302,20 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 
 ## Notes
 
-- **The Stop hook is the automatic half.** `scripts/audit-comments-gate.py` runs
-  on `Stop`, scans the uncommitted working tree, and blocks once per commit per
-  session if comments were added, handing the audit to the `audit-comments`
-  subagent — which is where the Haiku pin lives, so you may be reading this as
-  that agent rather than in the session that wrote the comments. It scopes to
-  the working tree rather than the branch so a long-lived branch's existing
-  comments don't get re-litigated every session; the slash command is the one
-  that covers the whole PR.
-- **`AUDIT_COMMENTS_HOOK=0` disables the hook** for a session without touching
-  settings.
+- **`Skill(ship)` is the automatic half.** It runs
+  `scripts/audit-comments-gate.py --list --scope branch` before committing, and
+  spawns the `audit-comments` subagent only if that reported something — which
+  is where the Haiku pin lives, so you may be reading this as that agent rather
+  than in the session that wrote the comments. Auditing once per PR rather than
+  once per turn is deliberate: the turn-by-turn version cost far more than it
+  caught.
+- **The audit runs before the commit**, so its edits land inside the commit that
+  opens the PR instead of trailing it.
 - **Which file types count is the script's business**, not this document's —
   `LINE_MARKERS` and `NAME_MARKERS` in `audit-comments-gate.py` are the list.
   Markdown is deliberately not among them: prose is not comments, and it has its
-  own skill. A type the script doesn't know is invisible to the hook, but
+  own skill. A type the script doesn't know is invisible to `/ship`, but
   `/audit-comments <path>` still audits it on demand.
-- The hook fires once per `session + HEAD`, so committing re-arms it for the
-  next batch of work. State lives in `~/.claude/state/audit-comments/` and is
-  swept after seven days.
 - `Skill(audit-docs)` is the counterpart, and check 8 is the seam. They do not
   call each other: a fact moved into markdown makes that file a touched doc, and
   the `audit-docs` gate picks it up on its own.

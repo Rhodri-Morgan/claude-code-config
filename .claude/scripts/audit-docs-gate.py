@@ -1,23 +1,13 @@
 #!/usr/bin/env python3
 """
-Find the docs a change touches, and nag about them once per commit.
-
-Two modes:
-
-    audit-docs-gate.py --list [--scope working|staged|branch] [--base REF] [PATH...]
-        Print each touched doc as `path<TAB>+added/-removed`. Used by
-        Skill(audit-docs) so the skill and the hook agree on the target set.
-
-    audit-docs-gate.py               (Stop hook — reads the hook JSON on stdin)
-        Blocks the turn once if docs were touched, pointing at the audit-docs
-        subagent.
+Find the docs a change touches, for Skill(audit-docs).
 
 Only the docs someone actually relies on count — the four well-known filenames
 and anything under a docs/ tree. A CHANGELOG, a scratch note or a generated PR
-body is markdown that nobody audits, and firing on those would train the reader
-to ignore the gate.
+body is markdown that nobody audits, and reporting those would train the reader
+to ignore the list.
 
-Unlike the comment gate this works at file granularity. There is no cheap
+Unlike the comment detector this works at file granularity. There is no cheap
 line-level signal for "this prose went stale", and the skill has to read the
 whole file anyway to check a claim against the repo.
 """
@@ -27,10 +17,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _audit_gate import (  # noqa: E402
-    already_fired, block, default_branch, git, read_hook_input, skipped_path,
+    default_branch, git, skipped_path,
 )
 
-MAX_LISTED = 12
+USAGE = (
+    "usage: audit-docs-gate.py --list [--scope working|staged|branch] "
+    "[--base REF] [PATH...]\n"
+    "  Prints each touched doc as `path<TAB>+added/-removed`."
+)
 
 DOC_NAMES = {"CLAUDE.md", "AGENTS.md", "README.md", "REVIEW.md"}
 
@@ -127,46 +121,15 @@ def run_list(argv):
     return 0
 
 
-def run_hook():
-    payload = read_hook_input("AUDIT_DOCS_HOOK")
-    if payload is None:
-        return 0
-
-    cwd = payload.get("cwd") or os.getcwd()
-    if not git(["rev-parse", "--git-dir"], cwd).strip():
-        return 0
-
-    counts = collect(cwd, scope="working")
-    if not counts:
-        return 0
-
-    if already_fired("audit-docs", payload, cwd):
-        return 0
-
-    ordered = sorted(counts, key=lambda p: -(counts[p][0] + counts[p][1]))
-    lines = "\n".join(
-        f"  {p}  +{counts[p][0]}/-{counts[p][1]}" for p in ordered[:MAX_LISTED]
-    )
-    if len(ordered) > MAX_LISTED:
-        lines += f"\n  ... {len(ordered) - MAX_LISTED} more"
-
-    return block(
-        f"audit-docs: {len(counts)} doc(s) changed in the working tree.\n\n"
-        f"{lines}\n\n"
-        "Audit them before finishing, by spawning the `audit-docs` subagent "
-        "(Agent tool, subagent_type: \"audit-docs\"). It runs Skill(audit-docs) "
-        "on Haiku, verifies each claim against the repo and applies the "
-        "corrections itself; relay its report rather than auditing them "
-        "yourself.\n\n"
-        "(Fires once per commit per session. AUDIT_DOCS_HOOK=0 disables it.)"
-    )
-
-
 def main():
     argv = sys.argv[1:]
     if argv and argv[0] == "--list":
         return run_list(argv[1:])
-    return run_hook()
+    # Exit 0, not 2. A session that started before this script stopped being a
+    # Stop hook still calls it bare on every turn, and a non-zero exit there is
+    # read as a block.
+    print(USAGE, file=sys.stderr)
+    return 0
 
 
 if __name__ == "__main__":

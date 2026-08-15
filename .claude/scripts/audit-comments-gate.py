@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 """
-Find comment lines added by a change, and nag about them once per commit.
-
-Two modes:
-
-    audit-comments-gate.py --list [--scope working|staged|branch] [--base REF] [PATH...]
-        Print every added comment line as `path:line<TAB>text`. Used by
-        Skill(audit-comments) so the skill and the hook agree on what counts
-        as a comment.
-
-    audit-comments-gate.py            (Stop hook — reads the hook JSON on stdin)
-        Blocks the turn once if comments were added, pointing at the
-        audit-comments subagent.
+Find the comment lines a change added, for Skill(audit-comments).
 
 Detection is deliberately shallow: a marker at the start of a line, or one
 outside any string on a line of code. Judging the comments is the skill's job;
@@ -25,10 +14,15 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _audit_gate import (  # noqa: E402
-    already_fired, block, default_branch, git, read_hook_input, skipped_path,
+    default_branch, git, skipped_path,
 )
 
-MAX_LISTED = 15
+USAGE = (
+    "usage: audit-comments-gate.py --list [--scope working|staged|branch] "
+    "[--base REF] [PATH...]\n"
+    "  Prints every added comment line as `path:line<TAB>text`."
+)
+
 MAX_ADDED_LINES_PER_FILE = 2000
 
 LINE_MARKERS = {
@@ -308,43 +302,15 @@ def run_list(argv):
     return 0
 
 
-def run_hook():
-    payload = read_hook_input("AUDIT_COMMENTS_HOOK")
-    if payload is None:
-        return 0
-
-    cwd = payload.get("cwd") or os.getcwd()
-    if not git(["rev-parse", "--git-dir"], cwd).strip():
-        return 0
-
-    findings = collect(cwd, scope="working")
-    if not findings:
-        return 0
-
-    if already_fired("audit-comments", payload, cwd):
-        return 0
-
-    listed = findings[:MAX_LISTED]
-    lines = "\n".join(f"  {p}:{n}  {t}" for p, n, t in listed)
-    if len(findings) > MAX_LISTED:
-        lines += f"\n  ... {len(findings) - MAX_LISTED} more"
-
-    return block(
-        f"audit-comments: {len(findings)} comment line(s) added or changed in the "
-        f"working tree.\n\n{lines}\n\n"
-        "Audit them before finishing, by spawning the `audit-comments` subagent "
-        "(Agent tool, subagent_type: \"audit-comments\"). It runs "
-        "Skill(audit-comments) on Haiku and applies the cuts, rewrites and moves "
-        "itself; relay its report rather than auditing them yourself.\n\n"
-        "(Fires once per commit per session. AUDIT_COMMENTS_HOOK=0 disables it.)"
-    )
-
-
 def main():
     argv = sys.argv[1:]
     if argv and argv[0] == "--list":
         return run_list(argv[1:])
-    return run_hook()
+    # Exit 0, not 2. A session that started before this script stopped being a
+    # Stop hook still calls it bare on every turn, and a non-zero exit there is
+    # read as a block.
+    print(USAGE, file=sys.stderr)
+    return 0
 
 
 if __name__ == "__main__":
