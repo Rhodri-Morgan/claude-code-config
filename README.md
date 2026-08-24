@@ -91,6 +91,16 @@ servers' tools, so they can reach a gated tool without triggering its `ask`
 rule. Left allowed on the basis that gating them would gate the gateway
 entirely; worth revisiting if that turns out to matter.
 
+### Worktree env files
+
+The `deny` list covers `Read`/`Edit` on `.env`, and Claude Code applies those
+path rules to Bash commands as well — `cp .env <worktree>/` is denied, and a
+deny is not approvable at the prompt. So `create-worktree` seeds a worktree
+through a script instead: the repo's own `make worktree-env` /
+`npm run worktree:env` where one exists, otherwise
+`scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
+secrets stay out of the transcript, and the deny rules keep their scope.
+
 ## Audits
 
 Comment and doc quality is the most common correction on generated work here,
