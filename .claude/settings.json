@@ -10,6 +10,7 @@
     "pr": "Co-Authored-By: Claude <noreply@anthropic.com>"
   },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Read",
       "Write",
@@ -27,6 +28,7 @@
       "Skill(branch)",
       "Skill(pull-request)",
       "Skill(openlogs-server-logs)",
+      "Skill(herdr)",
       "Skill(statistical-analysis)",
       "Skill(scikit-learn)",
       "Skill(pytorch-lightning)",
@@ -350,6 +352,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
+  "enableAllProjectMcpServers": true,
   "theme": "dark",
   "tui": "default",
   "teammateMode": "tmux",
