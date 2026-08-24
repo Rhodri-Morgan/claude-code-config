@@ -10,6 +10,7 @@
     "pr": "Co-Authored-By: Claude <noreply@anthropic.com>"
   },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Read",
       "Write",
@@ -350,6 +351,7 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "skipDangerousModePermissionPrompt": true,
+  "enableAllProjectMcpServers": true,
   "theme": "dark",
   "tui": "default",
   "teammateMode": "tmux",
