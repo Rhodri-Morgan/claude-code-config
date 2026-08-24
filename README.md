@@ -6,7 +6,7 @@ Personal Claude Code configuration.
 
 | Skill                       | Source                                                                                        | Description                                                   |
 | --------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `herdr`                     | [herdrdev/herdr](https://github.com/herdrdev/herdr)                                           | Drive the Herdr terminal multiplexer — panes, tabs and agents  |
+| `herdr`                     | [herdrdev/herdr](https://github.com/herdrdev/herdr)                                           | Control Herdr terminal multiplexer — workspaces, tabs, panes, and agents |
 | `openlogs-server-logs`      | [charlietlamb/openlogs](https://github.com/charlietlamb/openlogs)                             | Fetch and inspect local server logs via `openlogs tail`       |
 | `pytorch-lightning`         | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Deep learning with PyTorch Lightning                          |
 | `scikit-learn`              | [K-Dense-AI/claude-scientific-skills](https://github.com/K-Dense-AI/claude-scientific-skills) | Machine learning with scikit-learn                            |
