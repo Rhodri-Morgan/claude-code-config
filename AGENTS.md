@@ -37,7 +37,8 @@ prompt on first use. Do not add them.
 ### Scripts referenced from settings.json
 
 Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"`, quotes
-included. Never the repo checkout — that only describes one machine.
+included. Never the repo checkout — that only describes one machine. Skills
+referencing a script use the same form.
 
 ### claude-mem settings
 
