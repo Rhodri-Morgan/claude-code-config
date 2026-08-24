@@ -28,6 +28,7 @@
       "Skill(branch)",
       "Skill(pull-request)",
       "Skill(openlogs-server-logs)",
+      "Skill(herdr)",
       "Skill(statistical-analysis)",
       "Skill(scikit-learn)",
       "Skill(pytorch-lightning)",
