@@ -252,7 +252,49 @@
       "Bash(*terraform destroy*)",
       "Bash(*terraform apply -destroy*)",
       "Bash(*gh pr merge*)",
-      "Bash(*gh pr close*)"
+      "Bash(*gh pr close*)",
+      "Bash(*--no-preserve-root*)",
+      "Bash(rm -rf /)",
+      "Bash(rm -fr /)",
+      "Bash(rm -r -f /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/)",
+      "Bash(rm -rf $HOME)",
+      "Bash(rm -rf $HOME/)",
+      "Bash(*rm -rf /System*)",
+      "Bash(*rm -rf /Library*)",
+      "Bash(*rm -rf /Applications*)",
+      "Bash(*rm -rf /Users*)",
+      "Bash(*rm -rf /Volumes*)",
+      "Bash(*rm -rf /usr*)",
+      "Bash(*rm -rf /etc*)",
+      "Bash(*rm -rf /bin*)",
+      "Bash(*rm -rf /sbin*)",
+      "Bash(*rm -rf /opt*)",
+      "Bash(*rm -rf /dev*)",
+      "Bash(*rm -rf /private/var*)",
+      "Bash(*rm*/System/*)",
+      "Bash(*rm*/usr/bin/*)",
+      "Bash(*rm*/usr/lib/*)",
+      "Bash(*rm*/etc/*)",
+      "Bash(*rm*~/Library/*)",
+      "Bash(*rm*~/.ssh*)",
+      "Bash(*rm*~/.aws*)",
+      "Bash(*rm*~/.gnupg*)",
+      "Bash(*rm -rf ~/Library*)",
+      "Bash(*rm -rf ~/Documents*)",
+      "Bash(*rm -rf ~/Desktop*)",
+      "Bash(*rm -rf ~/Downloads*)",
+      "Bash(*rm -rf ~/Pictures*)",
+      "Bash(*rm -rf ~/Movies*)",
+      "Bash(*rm -rf ~/Music*)",
+      "Bash(*rm -rf ~/.claude)",
+      "Bash(*rm -rf ~/.config*)",
+      "Bash(*mv ~/.ssh*)",
+      "Bash(*mv ~/.aws*)",
+      "Bash(*cp*/System/*)",
+      "Bash(*cp*/Library/Launch*)",
+      "Bash(*mv*/Library/Launch*)"
     ],
     "ask": [
       "WebFetch",
@@ -367,5 +409,32 @@
   "awaySummaryEnabled": false,
   "preferredNotifChannel": "auto",
   "agentPushNotifEnabled": true,
-  "remoteControlAtStartup": true
+  "remoteControlAtStartup": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/guard-destructive.py\"",
+            "if": "Bash(*rm*)",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/guard-destructive.py\"",
+            "if": "Bash(*mv*)",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/guard-destructive.py\"",
+            "if": "Bash(*cp*)",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -101,6 +101,34 @@ through a script instead: the repo's own `make worktree-env` /
 `scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
 secrets stay out of the transcript, and the deny rules keep their scope.
 
+### `rm` / `rmdir` / `mv` / `cp`
+
+Glob rules cannot tell `rm -rf node_modules` from `rm -rf ~/Documents`, so these
+four commands are gated by `.claude/scripts/guard-destructive.py` on `PreToolUse`
+instead. It resolves every path the command would remove or overwrite —
+expanding `~`, `$HOME` and `$PWD`, tracking a leading `cd`, and reducing a glob
+to the directory it sits in — then answers:
+
+| Verdict | When |
+| ------- | ---- |
+| `allow` | Inside the session's working tree, `$TMPDIR`, `/private/tmp`, or `/private/var/folders` |
+| `ask`   | Anywhere else, `.git`, or a path holding an unexpanded variable |
+| `deny`  | `/`, the home directory, their top-level children, and system trees |
+
+Recursion is the difference between `rm *.pyc` and `rm -rf *`: a glob that
+reduces to the working tree root is allowed without `-r`, and prompts with it.
+
+Three hook entries share the script, filtered by `if` so it only spawns for
+commands mentioning `rm`, `mv` or `cp`. Emitting nothing leaves the
+`allow`/`ask`/`deny` lists in charge, so a crash or an unparseable command falls
+back to the blanket `ask` rules rather than running unchecked.
+
+The `deny` list still carries `rm`/`mv`/`cp` rules for the case where hooks are
+off entirely. **Keep them surgical.** `deny` outranks a hook's `allow`, so a
+pattern loose enough to catch a legitimate command blocks it permanently —
+`Bash(rm -rf /*)` reads as "any absolute path", not "root", and gates every
+`rm -rf` on a full path.
+
 ## Audits
 
 Comment and doc quality is the most common correction on generated work here,
