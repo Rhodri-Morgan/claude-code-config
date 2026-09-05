@@ -7,13 +7,11 @@ This repository defines a Claude setup.
 | Intent                             | Target              |
 | ---------------------------------- | ------------------- |
 | Install into `~/.claude`           | `make install`      |
-| Install without the prompt         | `make install-yes`  |
 | Install, including session state   | `make install-full` |
-| Same, without the prompt           | `make install-full-yes` |
 
-Use these targets to install — do not invoke `install.sh` directly. `make
-install` reads its confirmation from a tty, so an agent shell must use `make
-install-yes`.
+Use these targets to install — do not invoke `install.sh` directly. Neither
+prompts; both back up whatever they overwrite. Use `./install.sh --dry-run` to
+see the plan without touching anything.
 
 `install.sh` resolves its source `.claude` relative to its own location, so
 running it from a worktree installs *that worktree's* config into `~/.claude`.

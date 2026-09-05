@@ -18,7 +18,6 @@ MANAGED=(settings.json agents skills scripts shared)
 SESSION_STATE=(projects sessions history.jsonl)
 
 DRY_RUN=0
-ASSUME_YES=0
 DO_PLUGINS=1
 DO_SESSION_STATE=0
 
@@ -30,7 +29,6 @@ Usage: ./install.sh [options]
   --dry-run         Print what would happen, change nothing
   --no-plugins      Files only; skip marketplaces, plugins and MCP servers
   --session-state   Also merge ${SESSION_STATE[*]} across (large)
-  -y, --yes         Do not prompt before replacing
   -h, --help        This message
 
 Replaces: ${MANAGED[*]}
@@ -44,7 +42,6 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN=1; shift ;;
     --no-plugins) DO_PLUGINS=0; shift ;;
     --session-state) DO_SESSION_STATE=1; shift ;;
-    -y|--yes) ASSUME_YES=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -82,12 +79,6 @@ if (( ${#present[@]} )); then
   info "will replace in $TARGET: ${present[*]}"
 else
   info "nothing existing to replace"
-fi
-
-if (( ! DRY_RUN && ! ASSUME_YES )); then
-  [[ -t 0 ]] || die "not a tty — re-run with --yes to confirm"
-  read -r -p "Replace these with $SRC? [y/N] " reply
-  [[ "$reply" =~ ^[Yy]$ ]] || die "aborted"
 fi
 
 run mkdir -p "$TARGET"
