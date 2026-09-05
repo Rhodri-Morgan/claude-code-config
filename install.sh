@@ -187,50 +187,10 @@ while read -r plugin; do
   run claude plugin install "$plugin" --scope user || warn "plugin install failed: $plugin"
 done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value) | .key' "$SRC/settings.json")
 
-info "checking MCP servers"
-# `mcp add` defaults to local scope, which pins the server to whichever
-# directory this ran from — a global install wants user scope.
-#
-# Which .claude.json it lands in is decided by CLAUDE_CONFIG_DIR at the time of
-# the call, and there is more than one config dir in play: ~/.claude for a
-# `CLAUDE_CONFIG_DIR=~/.claude claude`, this repo's .claude for the `cc`
-# function in the README, and ~/.claude.json for a bare `claude`. Registering
-# in only one strands the server somewhere nothing reads.
-add_mcp_http() {
-  local name="$1" url="$2" cfg="$3" label="$4"
-  if jq -e --arg n "$name" '.mcpServers | has($n)' "$cfg/.claude.json" >/dev/null 2>&1; then
-    printf '    %s already in %s\n' "$name" "$label"
-  else
-    printf '    %s → %s\n' "$name" "$label"
-    run env CLAUDE_CONFIG_DIR="$cfg" claude mcp add --scope user \
-      --transport http "$name" "$url" || warn "could not add $name to $label"
-  fi
-}
-
-# $HOME is the config dir a bare `claude` uses (its config is ~/.claude.json).
-MCP_CFGS=("$TARGET")
-for extra in "$SRC" "$HOME"; do
-  seen=0
-  for existing in "${MCP_CFGS[@]}"; do
-    if [[ "$extra" == "$existing" ]]; then seen=1; fi
-  done
-  if (( ! seen )); then MCP_CFGS+=("$extra"); fi
-done
-
-for cfg in "${MCP_CFGS[@]}"; do
-  case "$cfg" in
-    "$SRC")  label="repo checkout (\`cc\`)" ;;
-    "$HOME") label="bare \`claude\`" ;;
-    *)       label="$cfg" ;;
-  esac
-  add_mcp_http linear-server https://mcp.linear.app/mcp "$cfg" "$label"
-done
-
 cat <<EOF
 
 $(info "done")
 Interactive follow-ups this script cannot do for you:
-  npx @posthog/wizard mcp add     # PostHog MCP server
-  /mcp                            # authenticate Linear and Sentry
-  Docker Desktop → MCP Toolkit    # AWS docs/terraform, Context7, GitHub
+  /mcp                            # authenticate the work MCP servers
+  Docker Desktop → MCP Toolkit    # AWS docs/terraform, GitHub
 EOF

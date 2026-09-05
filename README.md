@@ -32,35 +32,18 @@ MCP servers are provided via [MCP Toolkit by Docker](https://github.com/docker/m
 
 ## MCP Servers (CLI)
 
-Some MCP servers are added directly via the `claude mcp add` CLI rather than the Docker Toolkit. Run these against this config directory so they land in the right `.claude` config:
+This repo registers no MCP servers of its own any more. Sentry, Intercom,
+PostHog, Linear and context7 come from the work setup repo, which installs each
+server together with its read-only permission rules.
+
+It used to add `linear-server` here, pointing at `https://mcp.linear.app/mcp`.
+That is now actively harmful: the Linear plugin uses the same URL, and while a
+hand-registered `linear-server` exists **the plugin's server never starts** —
+it is shadowed rather than duplicated. If you still have one:
 
 ```bash
-export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
+claude mcp remove -s user linear-server
 ```
-
-| Server          | Transport | Endpoint / Command             | Description                |
-| --------------- | --------- | ------------------------------ | -------------------------- |
-| `linear-server` | http      | `https://mcp.linear.app/mcp`   | Linear issues and projects — added automatically by `install.sh` |
-
-Sentry, Intercom, PostHog and Linear are installed by a separate work setup repo
-instead — they are team tools, not personal config. Once that has run, drop the
-`linear-server` row above with `claude mcp remove -s user linear-server`; it and
-the Linear plugin point at the same URL.
-
-`linear-server` is the one server `install.sh` registers for you. It writes it
-into **every** config dir you might launch from, because which `.claude.json`
-`claude mcp add` writes to is decided by `CLAUDE_CONFIG_DIR` at the time of the
-call:
-
-| Launcher | `CLAUDE_CONFIG_DIR` | Config file |
-| -------- | ------------------- | ----------- |
-| `cc` (see ZSH Configuration) | `<repo>/.claude` | `<repo>/.claude/.claude.json` |
-| bare `claude` | unset | `~/.claude.json` |
-| `CLAUDE_CONFIG_DIR=~/.claude claude` | `~/.claude` | `~/.claude/.claude.json` |
-
-Registering in only one strands the server somewhere nothing reads — which is
-exactly what happened before: it was added to `~/.claude/.claude.json` while
-`cc` read the repo's copy and saw nothing.
 
 Authentication is still interactive — run `/mcp` once after installing.
 
@@ -255,8 +238,7 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, adds the `linear-server` MCP server if missing, and merges
-`claude-mem/settings.json` into `~/.claude-mem`.
+`settings.json` and merges `claude-mem/settings.json` into `~/.claude-mem`.
 
 ### `claude-mem` settings
 
