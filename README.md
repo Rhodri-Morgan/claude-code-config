@@ -205,6 +205,7 @@ from the installer.
 | `warp`       | [warpdotdev/claude-code-warp](https://github.com/warpdotdev/claude-code-warp) | `/plugin install warp@claude-code-warp` | Warp terminal integration            |
 | `sentry-mcp` | [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp)         | `/plugin install sentry-mcp@sentry-mcp` | Sentry MCP server (errors, traces)   |
 | `caveman`    | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)       | `/plugin install caveman@caveman`       | Compressed output mode — `/caveman`, plus `caveman-compress`, `caveman-stats` and `cavecrew` skills |
+| `ponytail`   | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)   | `/plugin install ponytail@ponytail`     | "Lazy senior dev" mode — pushes for the smallest solution that works: YAGNI, stdlib first, one line over fifty |
 
 These are declared in `.claude/settings.json` but their content must be fetched
 after cloning — `./install.sh` does this, or do it by hand:
@@ -221,6 +222,9 @@ after cloning — `./install.sh` does this, or do it by hand:
 
 /plugin marketplace add JuliusBrussee/caveman
 /plugin install caveman@caveman
+
+/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail
 ```
 
 `caveman` needs nothing per repo — its `SessionStart` hook keys off `~/.claude`,
