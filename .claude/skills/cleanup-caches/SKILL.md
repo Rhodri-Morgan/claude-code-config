@@ -1,7 +1,7 @@
 ---
 name: cleanup-caches
-description: Reclaim disk space from build and tool caches — Python bytecode, pytest/ruff/mypy, uv/pip/npm caches, and optionally .venv, node_modules and .terraform provider downloads. Use when the user wants to clear caches, says "clean caches", "clear python cache", "clear terraform cache", "my disk is full", or similar.
-allowed-tools: Bash(find:*), Bash(du:*), Bash(df:*), Bash(ls:*), Bash(git worktree:*), Bash(git rev-parse:*), Bash(uv cache:*), Bash(pip cache:*), Bash(npm cache:*), Bash(echo:*), Bash(printf:*), Bash(sort:*), Bash(awk:*), Bash(head:*), Bash(wc:*), Bash(command:*)
+description: Reclaim disk space from build and tool caches — Python bytecode, pytest/ruff/mypy, uv/pip/npm caches, optionally .venv, node_modules and .terraform provider downloads, and optionally the machine-wide caches (Xcode DerivedData, iOS simulators, Android AVDs, CocoaPods, Gradle, Playwright, Hugging Face). Use when the user wants to clear caches, says "clean caches", "clear python cache", "clear terraform cache", "my disk is full", or similar.
+allowed-tools: Bash(find:*), Bash(du:*), Bash(df:*), Bash(ls:*), Bash(git worktree:*), Bash(git rev-parse:*), Bash(uv cache:*), Bash(pip cache:*), Bash(npm cache:*), Bash(yarn cache:*), Bash(bun pm cache:*), Bash(pod cache:*), Bash(brew cleanup:*), Bash(xcrun simctl:*), Bash(echo:*), Bash(printf:*), Bash(sort:*), Bash(awk:*), Bash(head:*), Bash(wc:*), Bash(command:*)
 user-invocable: true
 model: sonnet
 ---
@@ -18,14 +18,16 @@ request — the per-project `.venv`, `node_modules` and `.terraform` directories
 - **Tiered.** Tier 1 costs nothing but CPU on the next run and goes unprompted.
   Tier 2 costs a network round trip (re-download, re-init) and needs
   confirmation.
-- **Scope is the repo and its worktrees**, not the whole disk. Every worktree
-  carries its own `.venv` / `node_modules` / `.terraform`, which is why the
-  totals get large.
+- **Scope is the repo and its worktrees** by default, not the whole disk. Every
+  worktree carries its own `.venv` / `node_modules` / `.terraform`, which is why
+  the totals get large. `--machine` widens it to the home-directory caches.
 - **Honour `$ARGUMENTS`:**
   - `--dry-run` — report the plan, remove nothing.
   - `--deep` — include tier 2.
   - `--global` — include the shared uv/pip/npm caches in tier 2.
-  - `--yes` — skip the tier 2 confirmation. Never assume it.
+  - `--machine` — include tier 3, the home-directory caches.
+  - `--yes` — skip the tier 2 confirmation. Never assume it. It does **not**
+    cover tier 3, which always confirms.
   - a path — clean that tree instead of the current repo.
 
 ## Tiers
@@ -35,6 +37,7 @@ request — the per-project `.venv`, `node_modules` and `.terraform` directories
 | 1 | `__pycache__`, `*.pyc`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`, `.turbo`, `uv cache prune` | A slower first run | Yes |
 | 2 | `.venv`, `node_modules`, `.terraform` | Re-download on next `uv sync` / `npm ci` / `terraform init` | `--deep` |
 | 2 | `uv cache clean`, `pip cache purge`, `npm cache clean --force` | Re-download for *every* project on this machine | `--global` |
+| 3 | Home-directory caches — see the table below | Varies: a rebuild, a re-download, or a re-install | `--machine` |
 
 ## Workflow
 
@@ -73,6 +76,12 @@ Tier 2 — needs a re-download (--deep):
   .venv (4)                     1.2 GB
   node_modules (2)              980 MB
   .terraform (3)                610 MB   (terraform init before the next plan)
+
+Tier 3 — machine-wide (--machine):
+  CoreSimulator/Devices         19 GB
+  .android/avd                  14 GB
+  Xcode DerivedData            9.3 GB
+  CocoaPods cache              6.3 GB
 ```
 
 If `$ARGUMENTS` contains `--dry-run`, stop here.
@@ -122,7 +131,75 @@ next `uv sync` in *any* repo re-downloads.
 
 Skip any whose tool is not installed rather than reporting a failure.
 
-### Step 7: Report
+### Step 7: Tier 3 — the machine-wide caches
+
+Only with `--machine`, and only after confirmation naming the totals. `--yes`
+does not cover this tier: these live outside any repo and several of them cost
+a large re-download.
+
+Size them first — a `du -sh` over the whole list, sorted, so the plan ranks by
+what is actually there:
+
+```
+!du -sh <path> 2>/dev/null
+```
+
+Skip a path that does not exist rather than reporting it as zero.
+
+**Tier 3a — rebuilt locally, no network.** Safe to offer as a group:
+
+| Path | What | Cost of removing it |
+| ---- | ---- | ------------------- |
+| `~/Library/Developer/Xcode/DerivedData` | Xcode build products, indexes | A full rebuild + reindex per project |
+| `~/Library/Developer/Xcode/Archives` | Shipped build archives | **Irreplaceable** — hold the dSYMs for released builds. Ask per archive, never bulk |
+| `~/Library/Developer/Xcode/iOS DeviceSupport` | Symbols per physical device+iOS pair | Re-extracted next time that device is attached |
+| `~/Library/Caches/com.apple.dt.Xcode` | Xcode's own scratch | Rebuild |
+| `~/.gradle/caches/build-cache-*`, `~/.gradle/daemon` | Gradle build cache and daemon logs | A slower Android build |
+| `~/Library/Caches/typescript`, `~/Library/Caches/node-gyp` | tsserver, native-module headers | Re-fetch, small |
+| `~/Library/Caches/claude-cli-nodejs` | Claude Code's own cache | Rebuilt on next run |
+| `~/.cache/pre-commit` | pre-commit hook environments | Re-created on next `pre-commit run` |
+
+**Tier 3b — a re-download or a re-install.** Confirm these individually, naming
+the size and what has to be re-fetched:
+
+| Path | What | Cost of removing it |
+| ---- | ---- | ------------------- |
+| `~/Library/Developer/CoreSimulator/Devices` | iOS simulator devices — installed apps, their data, per-device disk | Apps reinstall; simulator state is lost. Prune per device, see below |
+| Simulator runtimes | The iOS runtime disk images behind those devices | Multi-GB re-download from Apple. `xcrun simctl runtime list` |
+| `~/.android/avd` | Android emulator AVDs — one qcow2 disk each | Re-create the AVD, re-download nothing if the system image stays |
+| `~/Library/Android/sdk/ndk`, `.../system-images` | NDK versions and emulator system images | Re-download via `sdkmanager`, GB-scale |
+| `~/Library/Caches/CocoaPods` | Pod specs and downloaded pods | `pod install` re-fetches |
+| `~/.npm`, `~/.bun/install/cache`, `~/Library/Caches/Yarn`, `~/.pnpm-store` | JS package manager caches | Re-download on next install in *any* project |
+| `~/.gradle/wrapper`, `~/.gradle/caches/modules-2` | Gradle distributions and resolved dependencies | Re-download on next build |
+| `~/Library/Caches/ms-playwright`, `~/Library/Caches/Cypress` | Browser binaries | `npx playwright install` / `cypress install` |
+| `~/.cache/huggingface`, `~/.ollama` | Model weights | The largest re-download of the lot. Never bulk-delete — list the models and ask |
+| `~/Library/Caches/Homebrew`, `~/Library/Caches/JetBrains` | Downloaded bottles, IDE indexes | `brew cleanup` handles the first correctly; the second reindexes |
+| `~/.m2/repository`, `~/.cargo/registry`, `~/go/pkg/mod`, `~/.sdkman` | JVM / Rust / Go / SDKMAN artifacts | Re-download per project |
+
+Prefer the tool's own cleanup command over `rm -rf` wherever one exists — it
+knows which entries are still referenced:
+
+```
+!brew cleanup --prune=all
+!pod cache clean --all
+!yarn cache clean
+!bun pm cache rm
+!xcrun simctl delete unavailable
+```
+
+**Stale per-branch simulators.** The worktree workflow leaves one simulator
+device per branch — `xcrun simctl list devices` shows them named after the
+branch (`feature/mul-651`, `fix/team-logo-fallback-fit`). Cross-reference
+against `git branch -r` and offer to delete the ones whose branch is gone:
+
+```
+!xcrun simctl delete <udid>
+```
+
+`simctl delete unavailable` only removes devices whose *runtime* is gone — it
+will not touch these, because their runtime is still installed.
+
+### Step 8: Report
 
 Two or three lines — reclaimed total, what went, what was left:
 
@@ -145,6 +222,14 @@ Name any directory that now needs a re-init before it will build:
   scope here.
 - A `.venv` removed from a worktree takes its direnv state with it — the next
   `cd` re-renders `.env` from SSM, which needs AWS credentials to be live.
+- **Docker is out of scope here** — `~/Library/Containers/com.docker.docker` is
+  usually the single largest directory on the machine, but it is a VM disk
+  image. Deleting files inside it reclaims nothing; `Skill(cleanup-docker)`
+  prunes through the daemon instead.
+- **`~/Library/Caches` also holds non-dev application caches** (Spotify, Chrome,
+  Electron updater `*.ShipIt` directories). They can be large, but they are not
+  build caches and are out of scope — mention them in the report if they
+  dominate, and leave them.
 - `find ... -exec rm -rf {} +` is not seen by the destructive-command guard,
   which only inspects the leading command word. The `-prune` and `-maxdepth`
   bounds above are therefore the only thing keeping the deletion scoped — do not
@@ -166,5 +251,12 @@ Name any directory that now needs a re-init before it will build:
 
 `/cleanup-caches --dry-run`
 
-1. Report the plan across both tiers
+1. Report the plan across all three tiers
 2. Remove nothing
+
+`/cleanup-caches --machine`
+
+1. Tier 1 unprompted
+2. Size the home-directory caches and rank them
+3. Offer tier 3a as a group, tier 3b one at a time with the re-download named
+4. List the branch-named simulator devices whose branch no longer exists

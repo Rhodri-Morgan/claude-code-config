@@ -27,7 +27,9 @@ previous one removed.
 ## Rules
 
 - Pass `$ARGUMENTS` through to every sub-skill. They share `--dry-run` and
-  `--yes`; each ignores flags it does not recognise.
+  `--yes`; each ignores flags it does not recognise. `--machine` reaches
+  `cleanup-caches` alone, and widens it past this repo to the home-directory
+  caches (simulators, AVDs, DerivedData, package-manager caches).
 - Relay each sub-skill's own report — do not re-derive its numbers.
 - A sub-skill that cannot run (no Docker daemon, not a git repo) is a one-line
   note, not a failure. Continue to the next stage.
