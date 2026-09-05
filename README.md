@@ -36,16 +36,16 @@ Some MCP servers are added directly via the `claude mcp add` CLI rather than the
 
 ```bash
 export CLAUDE_CONFIG_DIR="$REPOS/claude-code-config/.claude"
-
-# PostHog (analytics) — installed via the PostHog wizard
-npx @posthog/wizard mcp add
 ```
 
 | Server          | Transport | Endpoint / Command             | Description                |
 | --------------- | --------- | ------------------------------ | -------------------------- |
 | `linear-server` | http      | `https://mcp.linear.app/mcp`   | Linear issues and projects — added automatically by `install.sh` |
-| `posthog`       | wizard    | `npx @posthog/wizard mcp add`  | PostHog product analytics  |
-| `sentry`        | plugin    | `sentry-mcp@sentry-mcp`        | Sentry issues, errors, and traces (provided by the `sentry-mcp` plugin) |
+
+Sentry, Intercom, PostHog and Linear are installed by a separate work setup repo
+instead — they are team tools, not personal config. Once that has run, drop the
+`linear-server` row above with `claude mcp remove -s user linear-server`; it and
+the Linear plugin point at the same URL.
 
 `linear-server` is the one server `install.sh` registers for you. It writes it
 into **every** config dir you might launch from, because which `.claude.json`
@@ -75,7 +75,7 @@ endpoints. They are deliberately absent from the `permissions.allow` list in
 ### Permissions
 
 `settings.json` allowlists MCP access at **server** level
-(`mcp__plugin_sentry-mcp_sentry` covers every tool that server exposes) rather
+(`mcp__plugin_context7_context7` covers every tool that server exposes) rather
 than tool by tool, so a server gaining a tool doesn't need a config change.
 
 Tools that write to systems outside this machine are then pulled back into `ask`,
@@ -83,7 +83,6 @@ which takes precedence over `allow`:
 
 | Gated tool | Why |
 | ---------- | --- |
-| `mcp__plugin_sentry-mcp_sentry__update_issue` | Mutates real Sentry issues |
 | `mcp__MCP_DOCKER__mcp-add` / `__mcp-remove` / `__mcp-config-set` | Rewrites MCP server configuration |
 
 Note that `MCP_DOCKER`'s `mcp-exec` and `code-mode` tools invoke other MCP
@@ -203,7 +202,6 @@ from the installer.
 | ------------ | ----------------------------------------------------------------------- | --------------------------------------- | ------------------------------------ |
 | `claude-mem` | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)       | `/plugin install claude-mem`             | Cross-session persistent memory      |
 | `warp`       | [warpdotdev/claude-code-warp](https://github.com/warpdotdev/claude-code-warp) | `/plugin install warp@claude-code-warp` | Warp terminal integration            |
-| `sentry-mcp` | [getsentry/sentry-mcp](https://github.com/getsentry/sentry-mcp)         | `/plugin install sentry-mcp@sentry-mcp` | Sentry MCP server (errors, traces)   |
 | `caveman`    | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman)       | `/plugin install caveman@caveman`       | Compressed output mode — `/caveman`, plus `caveman-compress`, `caveman-stats` and `cavecrew` skills |
 | `ponytail`   | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)   | `/plugin install ponytail@ponytail`     | "Lazy senior dev" mode — pushes for the smallest solution that works: YAGNI, stdlib first, one line over fifty |
 
@@ -216,9 +214,6 @@ after cloning — `./install.sh` does this, or do it by hand:
 
 /plugin marketplace add warpdotdev/claude-code-warp
 /plugin install warp@claude-code-warp
-
-/plugin marketplace add getsentry/sentry-mcp
-/plugin install sentry-mcp@sentry-mcp
 
 /plugin marketplace add JuliusBrussee/caveman
 /plugin install caveman@caveman

@@ -26,13 +26,18 @@ Do not commit local runtime state, instead add to `.gitignore`.
 ### MCP permissions
 
 Allowlist MCP access at **server** level in `settings.json`
-(`mcp__plugin_sentry-mcp_sentry`, not each tool) so a server gaining a tool
+(`mcp__plugin_context7_context7`, not each tool) so a server gaining a tool
 needs no config change. Then pull individual tools that write to systems outside
 this machine back into `ask` — `ask` takes precedence over `allow`.
 
 Servers carrying environment-specific credentials (ClickHouse, Grafana) are
 added per machine and stay out of the allowlist deliberately, so their tools
 prompt on first use. Do not add them.
+
+Work MCP servers — Sentry, Intercom, PostHog, Linear — are owned by a separate
+work setup repo, which allows their read tools by name. Do not add them here: a
+server-level `allow` in this file is a union with that one and would silently
+widen it.
 
 ### Scripts referenced from settings.json
 
