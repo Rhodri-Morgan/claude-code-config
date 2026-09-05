@@ -111,12 +111,17 @@ to the directory it sits in — then answers:
 
 | Verdict | When |
 | ------- | ---- |
-| `allow` | Inside the session's working tree, `$TMPDIR`, `/private/tmp`, or `/private/var/folders` |
-| `ask`   | Anywhere else, `.git`, or a path holding an unexpanded variable |
-| `deny`  | `/`, the home directory, their top-level children, and system trees |
+| `allow` | Inside the session's working tree, `$TMPDIR`, `/private/tmp`, `/private/var/folders`, or any other ordinary path |
+| `ask`   | The working tree root itself, `.git`, or a path holding an unexpanded variable |
+| `deny`  | `/`, the home directory, their top-level children, `~/Documents/RTM_REPOS`, and system trees |
 
 Recursion is the difference between `rm *.pyc` and `rm -rf *`: a glob that
 reduces to the working tree root is allowed without `-r`, and prompts with it.
+
+A path outside the working tree is allowed — a sibling repo or worktree can be
+deleted without a prompt, on the basis that the `deny` list already covers what
+cannot be recreated. `~/Documents/RTM_REPOS` is in that list for the same reason:
+its children are ordinary repos, but the directory holding all of them is not.
 
 Three hook entries share the script, filtered by `if` so it only spawns for
 commands mentioning `rm`, `mv` or `cp`. Emitting nothing leaves the

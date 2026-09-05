@@ -3,8 +3,10 @@
 
 Resolves every path a destructive command would touch and returns one of:
 
-  allow  inside the session's working tree or a temp dir
-  ask    anywhere else, or when the path cannot be resolved statically
+  allow  inside the session's working tree, a temp dir, or any other ordinary
+         path that is not protected
+  ask    the working tree root itself, .git, or a path that cannot be resolved
+         statically
   deny   system roots, the home directory itself, and its top-level dirs
 
 Returning nothing leaves the settings.json allow/ask/deny lists in charge, so a
@@ -86,6 +88,9 @@ PROTECTED = {
     _home(".gitconfig"),
     _home(".git-credentials"),
     _home(".netrc"),
+    # Paths outside the working tree are allowed, so individual repos here can be
+    # deleted; the directory holding all of them cannot.
+    _home("Documents", "RTM_REPOS"),
 }
 
 # Anything below these is off-limits too, unless an allow root claims it first.
@@ -229,7 +234,7 @@ def classify(path, cwd, globbed=False, recursive=False):
         return "deny", f"{path} is inside a system directory"
     if path == cwd:
         return "ask", f"{path} is the working tree root"
-    return "ask", f"{path} is outside the working tree"
+    return "allow", ""
 
 
 def main():
@@ -281,7 +286,7 @@ if __name__ == "__main__":
                     "hookSpecificOutput": {
                         "hookEventName": "PreToolUse",
                         "permissionDecision": verdict,
-                        "permissionDecisionReason": reason or "target is inside the working tree",
+                        "permissionDecisionReason": reason or "no target is a protected path",
                     }
                 }
             )
