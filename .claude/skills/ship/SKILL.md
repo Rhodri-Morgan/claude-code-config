@@ -62,6 +62,15 @@ and pushes.
 The sub-skills handle all the details including branch protection, PR
 formatting, and push.
 
+### Step 5: Report the PR URL
+
+Always end by printing the full PR URL on its own line, whether the PR was just
+created or already existed:
+
+```
+!gh pr view --json url --jq .url
+```
+
 ## Rules
 
 - Do NOT ask for confirmation at any step — just execute the full flow
@@ -75,3 +84,4 @@ formatting, and push.
   commit on the branch may carry unaudited comments or docs
 - If there are no changes AND no unpushed commits AND a PR already exists,
   update the PR description
+- Always finish with the PR URL, even on the paths that skip the commit
