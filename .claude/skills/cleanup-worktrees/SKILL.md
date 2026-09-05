@@ -100,8 +100,7 @@ Then:
 
 `git worktree remove` leaves an empty `.worktrees/` behind once the last worktree
 is gone. Leave it. It is ignored, so it shows up in nothing, and the next
-`/create-worktree` reuses it. Deleting it would trip the `Bash(rmdir *)`
-ask-rule and stall an otherwise unattended cleanup for no benefit.
+`/create-worktree` reuses it.
 
 ### Step 8: Final report
 

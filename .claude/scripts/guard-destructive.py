@@ -168,14 +168,16 @@ def targets_of(name, args):
         if skip_next:
             skip_next = False
             conservative = True
+            paths.append(arg)
             continue
         if not flags_done and arg == "--":
             flags_done = True
             continue
         if not flags_done and arg.startswith("-") and arg != "-":
-            if arg == "-t" or arg == "--target-directory":
+            if arg == "--target-directory" or (not arg.startswith("--") and "t" in arg):
                 skip_next = True
             elif arg.startswith("--target-directory="):
+                paths.append(arg.split("=", 1)[1])
                 conservative = True
             elif arg in ("--recursive", "-R") or (not arg.startswith("--") and "r" in arg.lower()):
                 recursive = True

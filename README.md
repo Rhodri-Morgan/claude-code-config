@@ -120,14 +120,19 @@ reduces to the working tree root is allowed without `-r`, and prompts with it.
 
 Three hook entries share the script, filtered by `if` so it only spawns for
 commands mentioning `rm`, `mv` or `cp`. Emitting nothing leaves the
-`allow`/`ask`/`deny` lists in charge, so a crash or an unparseable command falls
-back to the blanket `ask` rules rather than running unchecked.
+`allow`/`ask`/`deny` lists in charge, and a crash answers `ask`, so an
+unparseable command prompts rather than running unchecked.
 
-The `deny` list still carries `rm`/`mv`/`cp` rules for the case where hooks are
-off entirely. **Keep them surgical.** `deny` outranks a hook's `allow`, so a
-pattern loose enough to catch a legitimate command blocks it permanently —
-`Bash(rm -rf /*)` reads as "any absolute path", not "root", and gates every
-`rm -rf` on a full path.
+**Do not add blanket `Bash(rm *)`-style rules back to `ask`.** A rule outranks a
+hook's `allow`, so those four entries made the `allow` verdict unreachable and
+every in-tree `rm` prompted exactly as it did before the guard existed.
+
+For the same reason the `deny` list keeps only the literal whole-machine wipes
+(`rm -rf /`, `~`, `$HOME`) and `--no-preserve-root`. Path-shaped patterns such as
+`Bash(*rm*/etc/*)` are gone: the guard already resolves those paths properly, and
+the rule matched the *text* of the command, so a `grep` or an `echo` that merely
+quoted the path was blocked with no way to override. With hooks off, `rm` and
+friends fall back to a normal permission prompt.
 
 ## Audits
 
