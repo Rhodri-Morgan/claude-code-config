@@ -326,7 +326,8 @@
     "posthog@claude-plugins-official": true,
     "sentry-mcp@sentry-mcp": true,
     "figma@claude-plugins-official": true,
-    "caveman@caveman": true
+    "caveman@caveman": true,
+    "ponytail@ponytail": true
   },
   "extraKnownMarketplaces": {
     "thedotmack": {
@@ -351,6 +352,12 @@
       "source": {
         "source": "github",
         "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "ponytail": {
+      "source": {
+        "source": "github",
+        "repo": "DietrichGebert/ponytail"
       }
     }
   },
