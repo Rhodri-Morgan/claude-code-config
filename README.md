@@ -101,6 +101,44 @@ through a script instead: the repo's own `make worktree-env` /
 `scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
 secrets stay out of the transcript, and the deny rules keep their scope.
 
+### `rm` / `rmdir` / `mv` / `cp`
+
+Glob rules cannot tell `rm -rf node_modules` from `rm -rf ~/Documents`, so these
+four commands are gated by `.claude/scripts/guard-destructive.py` on `PreToolUse`
+instead. It resolves every path the command would remove or overwrite —
+expanding `~`, `$HOME` and `$PWD`, tracking a leading `cd`, and reducing a glob
+to the directory it sits in — then answers:
+
+| Verdict | When |
+| ------- | ---- |
+| `allow` | Inside the session's working tree, `$TMPDIR`, `/private/tmp`, `/private/var/folders`, or any other ordinary path |
+| `ask`   | The working tree root itself, `.git`, or a path holding an unexpanded variable |
+| `deny`  | `/`, the home directory, their top-level children, `~/Documents/RTM_REPOS`, and system trees |
+
+Recursion is the difference between `rm *.pyc` and `rm -rf *`: a glob that
+reduces to the working tree root is allowed without `-r`, and prompts with it.
+
+A path outside the working tree is allowed — a sibling repo or worktree can be
+deleted without a prompt, on the basis that the `deny` list already covers what
+cannot be recreated. `~/Documents/RTM_REPOS` is in that list for the same reason:
+its children are ordinary repos, but the directory holding all of them is not.
+
+Three hook entries share the script, filtered by `if` so it only spawns for
+commands mentioning `rm`, `mv` or `cp`. Emitting nothing leaves the
+`allow`/`ask`/`deny` lists in charge, and a crash answers `ask`, so an
+unparseable command prompts rather than running unchecked.
+
+**Do not add blanket `Bash(rm *)`-style rules back to `ask`.** A rule outranks a
+hook's `allow`, so those four entries made the `allow` verdict unreachable and
+every in-tree `rm` prompted exactly as it did before the guard existed.
+
+For the same reason the `deny` list keeps only the literal whole-machine wipes
+(`rm -rf /`, `~`, `$HOME`) and `--no-preserve-root`. Path-shaped patterns such as
+`Bash(*rm*/etc/*)` are gone: the guard already resolves those paths properly, and
+the rule matched the *text* of the command, so a `grep` or an `echo` that merely
+quoted the path was blocked with no way to override. With hooks off, `rm` and
+friends fall back to a normal permission prompt.
+
 ## Audits
 
 Comment and doc quality is the most common correction on generated work here,
