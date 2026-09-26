@@ -113,6 +113,18 @@ if (( DO_SESSION_STATE )); then
   done
 fi
 
+# herdr reads ~/.config/herdr/config.toml. Replaced, not merged: it holds no secrets
+# or machine state, and herdr keeps its runtime files (session, plugins, sockets)
+# beside it, which are left alone.
+HD_SRC="$REPO_DIR/herdr/config.toml"
+HD_FILE="$HOME/.config/herdr/config.toml"
+if [[ -f "$HD_SRC" ]] && ! cmp -s "$HD_SRC" "$HD_FILE"; then
+  info "installing herdr config to $HD_FILE"
+  run mkdir -p "$(dirname "$HD_FILE")"
+  [[ -f "$HD_FILE" ]] && run cp "$HD_FILE" "$HD_FILE.bak-$(date +%Y%m%d-%H%M%S)"
+  run cp "$HD_SRC" "$HD_FILE"
+fi
+
 # claude-mem reads ~/.claude-mem/settings.json, which sits outside CLAUDE_CONFIG_DIR
 # and so is never touched by the copy above. Merged key-by-key rather than replaced:
 # the live file also carries provider API keys and CLAUDE_MEM_DATA_DIR, none of which

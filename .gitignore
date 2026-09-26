@@ -64,3 +64,6 @@ __pycache__/
 
 # Local backups
 backups/
+
+# Local convenience script: names a work repo and machine-specific paths.
+/sync-claude.sh

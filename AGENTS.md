@@ -43,9 +43,12 @@ Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"`, quotes
 included. Never the repo checkout — that only describes one machine. Skills
 referencing a script use the same form.
 
-### claude-mem settings
+### Config outside `.claude/`
 
-`claude-mem/settings.json` is the one managed file outside `.claude/`, because
+`herdr/config.toml` is installed to `~/.config/herdr/` and replaced whole. Edit
+the repo copy; the live one is overwritten on install.
+
+`claude-mem/settings.json` lives outside `.claude/` too, because
 claude-mem reads `~/.claude-mem/settings.json` rather than anything under
 `CLAUDE_CONFIG_DIR`. `install.sh` merges it instead of replacing, so the live
 file keeps its API keys and `CLAUDE_MEM_DATA_DIR` — do not add those keys here.

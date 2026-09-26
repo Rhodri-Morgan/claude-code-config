@@ -27,14 +27,14 @@ MCP servers are provided via [MCP Toolkit by Docker](https://github.com/docker/m
 | ----------------- | ----------------------------------------------------------- |
 | AWS Documentation | Search AWS and AWSCC Terraform provider docs and IA modules |
 | AWS Terraform     | Execute Terraform/Terragrunt commands and run Checkov scans |
-| Context7          | Library documentation and code examples lookup              |
 | GitHub Official   | Issues, PRs, commits, code search, repository management    |
 
 ## MCP Servers (CLI)
 
 This repo registers no MCP servers of its own any more. Sentry, Intercom,
-PostHog, Linear and context7 come from the work setup repo, which installs each
-server together with its read-only permission rules.
+PostHog, and Linear come from the work setup repo, which installs each
+server together with its read-only permission rules. Context7 is provided via the
+official Claude Code plugins marketplace.
 
 It used to add `linear-server` here, pointing at `https://mcp.linear.app/mcp`.
 That is now actively harmful: the Linear plugin uses the same URL, and while a
@@ -238,11 +238,19 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json` and merges `claude-mem/settings.json` into `~/.claude-mem`.
+`settings.json`, merges `claude-mem/settings.json` into `~/.claude-mem`, and
+copies `herdr/config.toml` to `~/.config/herdr/`.
+
+### `herdr` config
+
+`herdr/config.toml` is copied over `~/.config/herdr/config.toml` whole — it holds
+no secrets or machine state. Skipped when identical; otherwise the old file is
+kept beside it as `config.toml.bak-<timestamp>`. Edit the repo copy, not the live
+one, or the next install reverts it.
 
 ### `claude-mem` settings
 
-`claude-mem/settings.json` at the repo root is the one managed thing that does
+`claude-mem/settings.json` at the repo root, like `herdr/`, does
 *not* live under `.claude/` — claude-mem reads `~/.claude-mem/settings.json`,
 outside `CLAUDE_CONFIG_DIR` entirely, so the copy step never reaches it.
 
