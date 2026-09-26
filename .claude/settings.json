@@ -228,7 +228,6 @@
       "Bash(*curl*|*sh*)",
       "Bash(*> /etc/*)",
       "Bash(*chmod 777*)",
-      "Bash(*chmod +x*)",
       "Bash(*git push --force *main*)",
       "Bash(*git push --force *master*)",
       "Bash(*git push -f*main*)",
