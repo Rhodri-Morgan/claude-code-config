@@ -27,14 +27,14 @@ MCP servers are provided via [MCP Toolkit by Docker](https://github.com/docker/m
 | ----------------- | ----------------------------------------------------------- |
 | AWS Documentation | Search AWS and AWSCC Terraform provider docs and IA modules |
 | AWS Terraform     | Execute Terraform/Terragrunt commands and run Checkov scans |
-| Context7          | Library documentation and code examples lookup              |
 | GitHub Official   | Issues, PRs, commits, code search, repository management    |
 
 ## MCP Servers (CLI)
 
 This repo registers no MCP servers of its own any more. Sentry, Intercom,
-PostHog, Linear and context7 come from the work setup repo, which installs each
-server together with its read-only permission rules.
+PostHog, and Linear come from the work setup repo, which installs each
+server together with its read-only permission rules. Context7 is provided via the
+official Claude Code plugins marketplace.
 
 It used to add `linear-server` here, pointing at `https://mcp.linear.app/mcp`.
 That is now actively harmful: the Linear plugin uses the same URL, and while a
