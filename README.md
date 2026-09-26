@@ -224,14 +224,20 @@ Use the `make` targets:
 ```bash
 make install       # replace the managed items
 make install-full  # same, plus session state
+make install-vibe  # same, plus PR merge/close/reopen and git force-push/delete/reset on main/master
 ```
 
 | Target         | Runs                          | Effect                                                          |
 | -------------- | ----------------------------- | --------------------------------------------------------------- |
 | `install`      | `./install.sh`                | Replaces the managed items                                       |
 | `install-full` | `./install.sh --session-state`| Also merges `projects/`, `sessions/`, `history.jsonl` (~1.5 GB)  |
+| `install-vibe` | `./install.sh --vibe`         | Allows `gh pr merge`, `close` and `reopen`, and drops the main/master git denies (force-push, branch delete, `reset --hard`) in the installed `settings.json` |
 
-Neither prompts. `./install.sh --dry-run` prints the plan and changes nothing.
+None of them prompt. `./install.sh --dry-run` prints the plan and changes nothing.
+
+Vibe mode lasts until the next plain `make install`. It edits the installed file
+because a `deny` rule beats an `allow` from any other settings source, so a
+`--settings` overlay could not lift it.
 
 **Run it from the main checkout, not a worktree.** The script resolves its
 source `.claude` relative to its own location, so `make install` from inside

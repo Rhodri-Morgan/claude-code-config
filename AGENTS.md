@@ -8,9 +8,10 @@ This repository defines a Claude setup.
 | ---------------------------------- | ------------------- |
 | Install into `~/.claude`           | `make install`      |
 | Install, including session state   | `make install-full` |
+| Install, loosening PR/main guards  | `make install-vibe` |
 
-Use these targets to install — do not invoke `install.sh` directly. Neither
-prompts; both back up whatever they overwrite. Use `./install.sh --dry-run` to
+Use these targets to install — do not invoke `install.sh` directly. None
+prompt; all back up whatever they overwrite. Use `./install.sh --dry-run` to
 see the plan without touching anything.
 
 `install.sh` resolves its source `.claude` relative to its own location, so
