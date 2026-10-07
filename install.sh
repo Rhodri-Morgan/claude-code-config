@@ -20,6 +20,7 @@ SESSION_STATE=(projects sessions history.jsonl)
 DRY_RUN=0
 DO_PLUGINS=1
 DO_SESSION_STATE=0
+VIBE=0
 
 usage() {
   cat <<EOF
@@ -29,6 +30,7 @@ Usage: ./install.sh [options]
   --dry-run         Print what would happen, change nothing
   --no-plugins      Files only; skip marketplaces, plugins and MCP servers
   --session-state   Also merge ${SESSION_STATE[*]} across (large)
+  --vibe            Also let the agent merge/close/reopen PRs and rewrite main
   -h, --help        This message
 
 Replaces: ${MANAGED[*]}
@@ -42,6 +44,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN=1; shift ;;
     --no-plugins) DO_PLUGINS=0; shift ;;
     --session-state) DO_SESSION_STATE=1; shift ;;
+    --vibe) VIBE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -60,6 +63,7 @@ run() {
 }
 
 [[ -d "$SRC" ]] || die "no .claude directory in $REPO_DIR"
+(( VIBE )) && { command -v jq >/dev/null || die "--vibe needs jq"; }
 command -v claude >/dev/null || warn "claude CLI not on PATH — plugin steps will be skipped"
 
 # Installing onto the source would delete the repo's own files.
@@ -98,6 +102,21 @@ for item in "${MANAGED[@]}"; do
   run rm -rf "$TARGET/$item"
   run cp -R "$SRC/$item" "$TARGET/$item"
 done
+
+# A deny rule wins over every other settings source, so vibe mode edits the
+# installed file rather than layering a second one on top.
+if (( VIBE )); then
+  info "vibe: allowing PR merge/close/reopen and force-push/delete/reset on main"
+  if (( DRY_RUN )); then
+    printf '    [dry-run] jq edit %s\n' "$TARGET/settings.json"
+  else
+    tmp="$(mktemp)"
+    jq '.permissions.deny |= map(select(test("gh pr (merge|close)|git .*(main|master)") | not))
+      | .permissions.allow += ["Bash(gh pr merge:*)", "Bash(gh pr close:*)", "Bash(gh pr reopen:*)"]' \
+      "$TARGET/settings.json" >"$tmp"
+    mv "$tmp" "$TARGET/settings.json"
+  fi
+fi
 
 if (( DO_SESSION_STATE )); then
   for item in "${SESSION_STATE[@]}"; do

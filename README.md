@@ -36,10 +36,10 @@ PostHog, and Linear come from the work setup repo, which installs each
 server together with its read-only permission rules. Context7 is provided via the
 official Claude Code plugins marketplace.
 
-It used to add `linear-server` here, pointing at `https://mcp.linear.app/mcp`.
-That is now actively harmful: the Linear plugin uses the same URL, and while a
+Do not register a `linear-server` MCP server pointing at
+`https://mcp.linear.app/mcp`. The Linear plugin uses the same URL, and while a
 hand-registered `linear-server` exists **the plugin's server never starts** —
-it is shadowed rather than duplicated. If you still have one:
+it is shadowed rather than duplicated. If you have one:
 
 ```bash
 claude mcp remove -s user linear-server
@@ -80,104 +80,29 @@ path rules to Bash commands as well — `cp .env <worktree>/` is denied, and a
 deny is not approvable at the prompt. So `create-worktree` seeds a worktree
 through a script instead: the repo's own `make worktree-env` /
 `npm run worktree:env` where one exists, otherwise
-`scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
 secrets stay out of the transcript, and the deny rules keep their scope.
 
 ### `rm` / `rmdir` / `mv` / `cp`
 
-Glob rules cannot tell `rm -rf node_modules` from `rm -rf ~/Documents`, so these
-four commands are gated by `.claude/scripts/guard-destructive.py` on `PreToolUse`
-instead. It resolves every path the command would remove or overwrite —
-expanding `~`, `$HOME` and `$PWD`, tracking a leading `cd`, and reducing a glob
-to the directory it sits in — then answers:
-
-| Verdict | When |
-| ------- | ---- |
-| `allow` | Inside the session's working tree, `$TMPDIR`, `/private/tmp`, `/private/var/folders`, or any other ordinary path |
-| `ask`   | The working tree root itself, `.git`, or a path holding an unexpanded variable |
-| `deny`  | `/`, the home directory, their top-level children, `~/Documents/RTM_REPOS`, and system trees |
-
-Recursion is the difference between `rm *.pyc` and `rm -rf *`: a glob that
-reduces to the working tree root is allowed without `-r`, and prompts with it.
-
-A path outside the working tree is allowed — a sibling repo or worktree can be
-deleted without a prompt, on the basis that the `deny` list already covers what
-cannot be recreated. `~/Documents/RTM_REPOS` is in that list for the same reason:
-its children are ordinary repos, but the directory holding all of them is not.
-
-Three hook entries share the script, filtered by `if` so it only spawns for
-commands mentioning `rm`, `mv` or `cp`. Emitting nothing leaves the
-`allow`/`ask`/`deny` lists in charge, and a crash answers `ask`, so an
-unparseable command prompts rather than running unchecked.
-
-**Do not add blanket `Bash(rm *)`-style rules back to `ask`.** A rule outranks a
-hook's `allow`, so those four entries made the `allow` verdict unreachable and
-every in-tree `rm` prompted exactly as it did before the guard existed.
-
-For the same reason the `deny` list keeps only the literal whole-machine wipes
-(`rm -rf /`, `~`, `$HOME`) and `--no-preserve-root`. Path-shaped patterns such as
-`Bash(*rm*/etc/*)` are gone: the guard already resolves those paths properly, and
-the rule matched the *text* of the command, so a `grep` or an `echo` that merely
-quoted the path was blocked with no way to override. With hooks off, `rm` and
-friends fall back to a normal permission prompt.
+These four commands are gated by a `PreToolUse` hook,
+`.claude/scripts/guard-destructive.py`, rather than glob rules, because glob
+rules cannot tell `rm -rf node_modules` from `rm -rf ~/Documents`. The hook
+allows paths in the working tree and ordinary paths, asks about the tree root
+and `.git`, and denies whole-machine and home-level paths. The verdict table and
+the reasoning are in [docs/destructive-commands.md](docs/destructive-commands.md).
 
 ## Audits
 
-Comment and doc quality is the most common correction on generated work here,
-and a rule in `CLAUDE.md` only helps if something checks it. Two audits do the
-checking, and `/ship` is where they run:
+Two audits run from `/ship` before it commits: `audit-comments-gate.py` and
+`audit-docs-gate.py` each list what the branch touched, and a Haiku subagent
+audits only what a detector reported. The reasoning and the file lists are in
+[docs/audits.md](docs/audits.md).
 
-| Detector                 | Finds                              | Hands off to        |
-| ------------------------ | ---------------------------------- | ------------------- |
-| `audit-comments-gate.py` | Comment lines the branch added     | `Agent(audit-comments)` |
-| `audit-docs-gate.py`     | Docs the branch touched            | `Agent(audit-docs)` |
-
-`Skill(ship)` runs both with `--list --scope branch` before it commits, and
-spawns a subagent only for a detector that reported something. A branch that
-touched no comments and no docs therefore costs two script runs and nothing
-else.
-
-**This used to be a `Stop` hook and is not any more.** Firing at the end of
-every turn re-ran the same audit over the same branch a dozen times per PR,
-which cost far more than it caught. Once per PR is the right frequency, and
-`/ship` is the one command that marks a PR.
-
-The audit runs **before** the commit, not after the PR, so the edits it makes
-land inside the commit that opens the PR rather than trailing it in a
-follow-up push.
-
-Neither audit asks the main session to do the work. Each goes to a subagent —
-`agents/audit-comments.md` and `agents/audit-docs.md`, both pinned to `haiku` —
-which runs the matching skill, applies the edits and reports back. Reading every
-touched file in full is the expensive half of an audit, and this keeps it out of
-the main context.
-
-The skills share the detectors via `--list`, so an audit covers exactly what was
-reported. For comments that means a shallow scan for markers outside string
-literals — `LINE_MARKERS` and `NAME_MARKERS` in the script are the list of file
-types, and markdown is excluded since prose is not comments. For docs it means
-the four well-known filenames plus anything under a `docs/` tree; generated and
-mechanical markdown like `CHANGELOG.md`, `LICENSE.md` and `CODE_OF_CONDUCT.md`
-are excluded on purpose, because a detector that reports files nobody maintains
-claim by claim teaches you to ignore it.
-
-They do not chain. `audit-comments` moves system-level facts out of comments and
-into markdown, which makes that file a touched doc — but the two run
-concurrently, so the docs audit picks it up on the next `/ship`.
-
-The two detectors are separate scripts rather than one so either can be dropped
-from `/ship` alone. They share `_audit_gate.py` for the git half, so their scope
-semantics cannot drift apart.
-
-Both are also available on demand as `/audit-comments` and `/audit-docs`:
+Both are also available on demand:
 
 - `/audit-comments` accepts a scope (`--staged`, `--working`), a PR number, paths, or `--dry-run`.
 - `/audit-docs` accepts paths, a PR number, `--all`, or `--dry-run`.
-
-The `statusLine` command in `settings.json` is written as
-`"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/…"`. It runs through a shell, so
-this resolves against whichever config dir is actually in use and needs nothing
-from the installer.
 
 ## Required Plugins
 
@@ -215,23 +140,24 @@ Code.
 
 `./install.sh` installs this config into the global `~/.claude`, **replacing**
 the managed items (`settings.json`, `agents/`, `skills/`, `scripts/`, `shared/`)
-rather than merging into them. Anything it is about to overwrite is copied to
+rather than merging into them. Those items are copied to
 `~/.claude/backups/config-<timestamp>/` first. `CLAUDE.md`, credentials, plugins
-and session state are left untouched.
+and session state are not replaced; session state is merged only with
+`--session-state`.
 
 Use the `make` targets:
 
-```bash
-make install       # replace the managed items
-make install-full  # same, plus session state
-```
+| Target              | Runs                           | Effect                                                                                                                                                        |
+| ------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make install`      | `./install.sh`                 | Replaces the managed items                                                                                                                                    |
+| `make install-full` | `./install.sh --session-state` | Also merges `projects/`, `sessions/`, `history.jsonl`                                                                                                         |
+| `make install-vibe` | `./install.sh --vibe`          | Allows `gh pr merge`, `close` and `reopen`, and drops the main/master git denies (force-push, branch delete, `reset --hard`) in the installed `settings.json` |
 
-| Target         | Runs                          | Effect                                                          |
-| -------------- | ----------------------------- | --------------------------------------------------------------- |
-| `install`      | `./install.sh`                | Replaces the managed items                                       |
-| `install-full` | `./install.sh --session-state`| Also merges `projects/`, `sessions/`, `history.jsonl` (~1.5 GB)  |
+None of them prompt. `./install.sh --dry-run` prints the plan and changes nothing.
 
-Neither prompts. `./install.sh --dry-run` prints the plan and changes nothing.
+Vibe mode lasts until the next plain `make install`. It edits the installed file
+because a `deny` rule beats an `allow` from any other settings source, so a
+`--settings` overlay could not lift it.
 
 **Run it from the main checkout, not a worktree.** The script resolves its
 source `.claude` relative to its own location, so `make install` from inside
@@ -250,46 +176,10 @@ one, or the next install reverts it.
 
 ### `claude-mem` settings
 
-`claude-mem/settings.json` at the repo root, like `herdr/`, does
-*not* live under `.claude/` — claude-mem reads `~/.claude-mem/settings.json`,
-outside `CLAUDE_CONFIG_DIR` entirely, so the copy step never reaches it.
-
-It is **merged** key-by-key, not replaced: the live file also holds provider API
-keys and `CLAUDE_MEM_DATA_DIR`, which this repo deliberately does not track.
-Tracked keys win; anything else in the target survives. `CLAUDE_CODE_PATH` is
-resolved at install time from `command -v claude` rather than tracked, since it
-is machine-specific.
-
-Three of the tracked values exist to keep claude-mem's own `Stop` hook — which
-this repo does not configure and cannot remove — from stalling every turn. That
-hook is synchronous: it polls for its summary for up to 110s, against Claude
-Code's own 120s hook timeout, so anything that stops a summary completing costs
-you two minutes per turn, in every open session:
-
-| Key | Value | Why |
-| --- | ----- | --- |
-| `CLAUDE_CODE_PATH` | resolved at install | Left empty, claude-mem resolves `claude` via `which` inside a worker daemon that outlives CLI updates. Once stale, every summary fails |
-| `CLAUDE_MEM_EXCLUDED_PROJECTS` | `observer-sessions` | claude-mem summarises via Claude Code SDK subprocesses, which fire these same hooks and enqueue more summaries — self-feeding without this |
-| `CLAUDE_MEM_MAX_CONCURRENT_AGENTS` | `6` | Sized to the number of sessions typically open at once. Beyond the cap, sessions fail with `Timed out waiting for agent pool slot` |
-
-The worker caches settings at startup, so `install.sh` restarts it when one is
-already running.
-
-### `claude-mem` history
-
-Nothing to migrate — memory is separate from the settings above. claude-mem
-stores it in `~/.claude-mem`
-(`claude-mem.db` + `chroma/`), resolved from `CLAUDE_MEM_DATA_DIR` →
-`~/.claude-mem/settings.json` → that hardcoded default — never from
-`CLAUDE_CONFIG_DIR`. Observations are keyed by project directory name, so recall
-is identical whichever config dir Claude runs under.
-
-What *is* per-config-dir is raw session state: `projects/` (transcripts),
-`sessions/` (resumable sessions) and `history.jsonl` (prompt history). Those do
-not follow a config-dir switch, which costs you `/resume` on old sessions and
-↑-arrow prompt history but not memory recall. Pass `--session-state` to merge
-them into the target — it is a merge, not a replace, so sessions already in the
-target survive. The transcript corpus is large (~1.5 GB), so this is opt-in.
+`claude-mem/settings.json` is merged key by key into `~/.claude-mem/settings.json`
+rather than replacing it, and `install.sh` restarts a running claude-mem worker
+so it picks the values up. Which keys are tracked, why, and how memory and
+session state are stored is in [docs/claude-mem.md](docs/claude-mem.md).
 
 ## ZSH Configuration
 

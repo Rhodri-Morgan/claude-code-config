@@ -4,14 +4,10 @@ This repository defines a Claude setup.
 
 ## Commands
 
-| Intent                             | Target              |
-| ---------------------------------- | ------------------- |
-| Install into `~/.claude`           | `make install`      |
-| Install, including session state   | `make install-full` |
-
-Use these targets to install — do not invoke `install.sh` directly. Neither
-prompts; both back up whatever they overwrite. Use `./install.sh --dry-run` to
-see the plan without touching anything.
+Install with `make install`, `make install-full` or `make install-vibe`; what
+each one does is in the README's Install section. Do not invoke `install.sh`
+directly. None of the targets prompt. Use `./install.sh --dry-run` to see the
+plan without touching anything.
 
 `install.sh` resolves its source `.claude` relative to its own location, so
 running it from a worktree installs *that worktree's* config into `~/.claude`.
@@ -42,6 +38,13 @@ widen it.
 Write the path as `"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/<name>"`, quotes
 included. Never the repo checkout — that only describes one machine. Skills
 referencing a script use the same form.
+
+### Destructive-command guard
+
+`rm`, `rmdir`, `mv` and `cp` are gated by `.claude/scripts/guard-destructive.py`
+on `PreToolUse`, not by glob rules. Do not add blanket `Bash(rm *)`-style rules to
+`ask`: a rule outranks the hook's `allow` verdict. See
+[docs/destructive-commands.md](docs/destructive-commands.md).
 
 ### Config outside `.claude/`
 
