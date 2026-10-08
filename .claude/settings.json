@@ -365,6 +365,7 @@
   "tui": "default",
   "teammateMode": "tmux",
   "autoCompactEnabled": true,
+  "switchModelsOnFlag": true,
   "fileCheckpointingEnabled": false,
   "awaySummaryEnabled": false,
   "preferredNotifChannel": "auto",
