@@ -31,10 +31,17 @@ MCP servers are provided via [MCP Toolkit by Docker](https://github.com/docker/m
 
 ## MCP Servers (CLI)
 
-This repo registers no MCP servers of its own any more. Sentry, Intercom,
-PostHog, and Linear come from the work setup repo, which installs each
-server together with its read-only permission rules. Context7 is provided via the
-official Claude Code plugins marketplace.
+Intercom, PostHog, and Linear come from the work setup repo, which installs
+each server together with its read-only permission rules. Sentry's permission
+rules come from there too, but its server and skills arrive via the `sentry`
+plugin, which — like Context7 — this repo enables from the official Claude Code
+plugins marketplace.
+
+[REA](https://github.com/morluto/rea) (reverse-engineering MCP server and its
+`reverse-engineer-anything` skill) is installed by `install.sh`, which runs
+`npx -y rea-agents@latest setup --client claude_code --yes`. That registers `rea`
+in `~/.claude.json` and writes the skill to `~/.claude/skills`. Needs Node.js
+22.19+. Native analysis also needs Hopper, Ghidra or IDA.
 
 Do not register a `linear-server` MCP server pointing at
 `https://mcp.linear.app/mcp`. The Linear plugin uses the same URL, and while a
@@ -80,8 +87,9 @@ path rules to Bash commands as well — `cp .env <worktree>/` is denied, and a
 deny is not approvable at the prompt. So `create-worktree` seeds a worktree
 through a script instead: the repo's own `make worktree-env` /
 `npm run worktree:env` where one exists, otherwise
-`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/worktree-copy-env.sh`. Nothing in the command names a `.env` path, the
-secrets stay out of the transcript, and the deny rules keep their scope.
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/worktree-copy-env.sh`. Nothing in
+the command names a `.env` path, the secrets stay out of the transcript, and the
+deny rules keep their scope.
 
 ### `rm` / `rmdir` / `mv` / `cp`
 
@@ -164,15 +172,14 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, merges `claude-mem/settings.json` into `~/.claude-mem`, and
-copies `herdr/config.toml` to `~/.config/herdr/`.
+`settings.json`, runs REA's setup, merges `claude-mem/settings.json` into
+`~/.claude-mem`, and copies `herdr/config.toml` to `~/.config/herdr/`.
 
 ### `herdr` config
 
 `herdr/config.toml` is copied over `~/.config/herdr/config.toml` whole — it holds
 no secrets or machine state. Skipped when identical; otherwise the old file is
-kept beside it as `config.toml.bak-<timestamp>`. Edit the repo copy, not the live
-one, or the next install reverts it.
+kept beside it as `config.toml.bak-<timestamp>`.
 
 ### `claude-mem` settings
 

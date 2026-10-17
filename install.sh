@@ -132,9 +132,8 @@ if (( DO_SESSION_STATE )); then
   done
 fi
 
-# herdr reads ~/.config/herdr/config.toml. Replaced, not merged: it holds no secrets
-# or machine state, and herdr keeps its runtime files (session, plugins, sockets)
-# beside it, which are left alone.
+# Replaced, not merged: it holds no secrets or machine state, and herdr keeps its
+# runtime files (session, plugins, sockets) beside it, which are left alone.
 HD_SRC="$REPO_DIR/herdr/config.toml"
 HD_FILE="$HOME/.config/herdr/config.toml"
 if [[ -f "$HD_SRC" ]] && ! cmp -s "$HD_SRC" "$HD_FILE"; then
@@ -217,6 +216,20 @@ while read -r plugin; do
   printf '    %s\n' "$plugin"
   run claude plugin install "$plugin" --scope user || warn "plugin install failed: $plugin"
 done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value) | .key' "$SRC/settings.json")
+
+# REA's setup writes the skill into skills/, so it must run after the managed items
+# are replaced. It registers in $CLAUDE_CONFIG_DIR/.claude.json, but the default config
+# dir reads ~/.claude.json, so the default target unsets the variable. Blanking it
+# instead makes REA write a relative .claude.json into the current directory.
+info "setting up rea"
+rea_env=(env CLAUDE_CONFIG_DIR="$TARGET")
+[[ "$TARGET" == "$HOME/.claude" ]] && rea_env=(env -u CLAUDE_CONFIG_DIR)
+if command -v npx >/dev/null; then
+  run "${rea_env[@]}" npx -y rea-agents@latest setup --client claude_code --yes \
+    || warn "rea setup failed"
+else
+  warn "npx not on PATH — skipping rea"
+fi
 
 cat <<EOF
 
