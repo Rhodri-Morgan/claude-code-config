@@ -56,10 +56,9 @@ Authentication is still interactive — run `/mcp` once after installing.
 
 ### Per-machine servers
 
-The ClickHouse (`clickhouse-clippd-*`, `clickhouse-analytics-*`,
-`clickhouse-scoreboard-*`) and Grafana (`grafana-mulligan-*`) servers are added
-per machine, not managed here — they carry environment-specific credentials and
-endpoints. They are deliberately absent from the `permissions.allow` list in
+The ClickHouse (`clickhouse-analytics-*`, `clickhouse-scoreboard-*`) and
+Grafana (`grafana-mulligan-*`) servers are added per machine, not managed here —
+they carry environment-specific credentials and endpoints. They are deliberately absent from the `permissions.allow` list in
 `settings.json`, so their tools prompt on first use.
 
 ### Permissions
