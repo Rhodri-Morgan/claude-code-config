@@ -172,14 +172,13 @@ source `.claude` relative to its own location, so `make install` from inside
 `.worktrees/<something>` installs *that worktree's* config.
 
 Beyond copying files, it fetches the marketplaces and plugins declared in
-`settings.json`, runs REA's setup, merges `claude-mem/settings.json` into
-`~/.claude-mem`, and copies `herdr/config.toml` to `~/.config/herdr/`.
+`settings.json`, runs REA's setup, and merges `claude-mem/settings.json` into
+`~/.claude-mem`.
 
 ### `herdr` config
 
-`herdr/config.toml` is copied over `~/.config/herdr/config.toml` whole — it holds
-no secrets or machine state. Skipped when identical; otherwise the old file is
-kept beside it as `config.toml.bak-<timestamp>`.
+Lives in [herdr-plugins](https://github.com/Rhodri-Morgan/herdr-plugins); run
+`make install` there.
 
 ### `claude-mem` settings
 

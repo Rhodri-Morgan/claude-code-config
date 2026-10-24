@@ -48,8 +48,9 @@ on `PreToolUse`, not by glob rules. Do not add blanket `Bash(rm *)`-style rules 
 
 ### Config outside `.claude/`
 
-`herdr/config.toml` is installed to `~/.config/herdr/` and replaced whole. Edit
-the repo copy; the live one is overwritten on install.
+herdr's `config.toml` is not here: it lives in
+[herdr-plugins](https://github.com/Rhodri-Morgan/herdr-plugins), next to the
+plugins whose keybindings it carries.
 
 `claude-mem/settings.json` lives outside `.claude/` too, because
 claude-mem reads `~/.claude-mem/settings.json` rather than anything under

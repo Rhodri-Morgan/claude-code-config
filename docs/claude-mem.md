@@ -2,7 +2,7 @@
 
 ## Settings
 
-`claude-mem/settings.json` at the repo root, like `herdr/`, does *not* live under
+`claude-mem/settings.json` at the repo root does *not* live under
 `.claude/` — claude-mem reads `~/.claude-mem/settings.json`, outside
 `CLAUDE_CONFIG_DIR` entirely, so the copy step never reaches it.
 
