@@ -139,11 +139,14 @@ Code.
 ## Install
 
 `./install.sh` installs this config into the global `~/.claude`, **replacing**
-the managed items (`settings.json`, `agents/`, `skills/`, `scripts/`, `shared/`)
-rather than merging into them. Those items are copied to
-`~/.claude/backups/config-<timestamp>/` first. `CLAUDE.md`, credentials, plugins
-and session state are not replaced; session state is merged only with
+the managed items in `.claude/` (`CLAUDE.md`, `settings.json`, `agents/`,
+`skills/`, `scripts/`, `shared/`) rather than merging into them. Those items are
+copied to `~/.claude/backups/config-<timestamp>/` first. Credentials, plugins and
+session state are not replaced; session state is merged only with
 `--session-state`.
+
+`.claude/CLAUDE.md` installs as `~/.claude/CLAUDE.md`, the global memory file that
+loads into every session.
 
 Use the `make` targets:
 
