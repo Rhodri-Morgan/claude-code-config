@@ -140,10 +140,24 @@ Code.
 
 `./install.sh` installs this config into the global `~/.claude`, **replacing**
 the managed items in `.claude/` (`CLAUDE.md`, `settings.json`, `agents/`,
-`skills/`, `scripts/`, `shared/`) rather than merging into them. Those items are
-copied to `~/.claude/backups/config-<timestamp>/` first. Credentials, plugins and
+`skills/`, `scripts/`, `shared/`). Files are replaced whole; directories are
+replaced entry by entry, as described below. Those items are copied to
+`~/.claude/backups/config-<timestamp>/` first. Credentials, plugins and
 session state are not replaced; session state is merged only with
 `--session-state`.
+
+Inside `agents/`, `skills/`, `scripts/` and `shared/`, only the entries this
+repo ships are replaced, so anything else installed there survives: the synced
+claude.ai skills, REA's skill, and other repos' scripts.
+`~/.claude/.claude-code-config-manifest` records what the last install wrote,
+so an entry deleted from the repo is still removed.
+
+`settings.json` is replaced as a whole. Another repo that needs hooks or
+permissions there drops a JSON fragment in `~/.claude/settings.d/`, and every
+install merges the fragments back in when `jq` is on the `PATH`. Objects merge
+deeply and arrays concatenate, so a fragment's `hooks.SessionStart` entries are
+appended to any `SessionStart` entries already in `settings.json`, not in place
+of them.
 
 `.claude/CLAUDE.md` installs as `~/.claude/CLAUDE.md`, the global memory file that
 loads into every session.
@@ -152,7 +166,7 @@ Use the `make` targets:
 
 | Target              | Runs                           | Effect                                                                                                                                                        |
 | ------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `make install`      | `./install.sh`                 | Replaces the managed items                                                                                                                                    |
+| `make install`      | `./install.sh`                 | Replaces the managed items, then merges `settings.d/` into `settings.json`                                                                                    |
 | `make install-full` | `./install.sh --session-state` | Also merges `projects/`, `sessions/`, `history.jsonl`                                                                                                         |
 | `make install-vibe` | `./install.sh --vibe`          | Allows `gh pr merge`, `close` and `reopen`, and drops the main/master git denies (force-push, branch delete, `reset --hard`) in the installed `settings.json` |
 
