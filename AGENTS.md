@@ -17,6 +17,11 @@ Install from the main checkout.
 
 Do not commit local runtime state, instead add to `.gitignore`.
 
+### Global `CLAUDE.md`
+
+`.claude/CLAUDE.md` loads into every session on every project, so keep it short
+and keep anything specific to this repo out of it. Repo rules go here instead.
+
 ### MCP permissions
 
 Allowlist MCP access at **server** level in `settings.json`

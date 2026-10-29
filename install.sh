@@ -7,9 +7,7 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$REPO_DIR/.claude"
 TARGET="$HOME/.claude"
 
-# Replaced wholesale. Everything else in the target (CLAUDE.md, credentials,
-# plugins, history, session state) is left alone.
-MANAGED=(settings.json agents skills scripts shared)
+MANAGED=(CLAUDE.md settings.json agents skills scripts shared)
 
 # Per-config-dir session state: transcripts, resumable sessions, prompt history.
 # Merged in (never replaced) only with --session-state, since it is large and
@@ -140,7 +138,7 @@ fi
 # CLAUDE_CODE_PATH is resolved here rather than tracked. Left empty, claude-mem
 # resolves `claude` once via `which` inside a worker daemon that can outlive several
 # CLI updates; when that goes stale every summary fails and the Stop hook — which
-# polls for the summary synchronously — blocks each turn for its full 110s.
+# polls for the summary synchronously — stalls each turn until it times out.
 CM_SRC="$REPO_DIR/claude-mem/settings.json"
 CM_FILE="$HOME/.claude-mem/settings.json"
 if [[ -f "$CM_SRC" ]] && command -v jq >/dev/null; then
