@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Install this repo's Claude Code config into the global ~/.claude,
-# replacing the managed items rather than merging into them.
+# Install this repo's Claude Code config into the global ~/.claude, replacing
+# the managed items this repo owns and leaving everything else in place.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,6 +8,9 @@ SRC="$REPO_DIR/.claude"
 TARGET="$HOME/.claude"
 
 MANAGED=(CLAUDE.md settings.json agents skills scripts shared)
+
+MANIFEST_NAME=.claude-code-config-manifest
+FRAGMENTS_NAME=settings.d
 
 # Per-config-dir session state: transcripts, resumable sessions, prompt history.
 # Merged in (never replaced) only with --session-state, since it is large and
@@ -31,7 +34,8 @@ Usage: ./install.sh [options]
   --vibe            Also let the agent merge/close/reopen PRs and rewrite main
   -h, --help        This message
 
-Replaces: ${MANAGED[*]}
+Replaces the repo's own entries in: ${MANAGED[*]}
+Then merges <target>/$FRAGMENTS_NAME/*.json into settings.json
 Backs up anything it overwrites to <target>/backups/config-<timestamp>/
 EOF
 }
@@ -94,12 +98,60 @@ if (( ${#present[@]} )); then
   done
 fi
 
+MANIFEST="$TARGET/$MANIFEST_NAME"
+FRAGMENTS="$TARGET/$FRAGMENTS_NAME"
+
+installed=()
 for item in "${MANAGED[@]}"; do
   [[ -e "$SRC/$item" ]] || { warn "$item not in repo, skipping"; continue; }
   info "installing $item"
-  run rm -rf "$TARGET/$item"
-  run cp -R "$SRC/$item" "$TARGET/$item"
+  entries=("$item")
+  # Directories are replaced entry by entry, so skills and scripts that other
+  # tools install there survive.
+  if [[ -d "$SRC/$item" ]]; then
+    run mkdir -p "$TARGET/$item"
+    entries=()
+    while IFS= read -r name; do entries+=("$item/$name"); done < <(ls -A "$SRC/$item")
+  fi
+  for rel in "${entries[@]}"; do
+    run rm -rf "$TARGET/$rel"
+    run cp -R "$SRC/$rel" "$TARGET/$rel"
+    installed+=("$rel")
+  done
 done
+
+if [[ -f "$MANIFEST" ]]; then
+  while IFS= read -r rel; do
+    # An empty or upward line would point rm at the target itself.
+    [[ -n "$rel" && "$rel" != *..* ]] || continue
+    printf '%s\n' "${installed[@]}" | grep -Fxq -- "$rel" && continue
+    info "removing $rel (no longer in repo)"
+    run rm -rf "$TARGET/$rel"
+  done <"$MANIFEST"
+fi
+(( DRY_RUN )) || printf '%s\n' "${installed[@]}" >"$MANIFEST"
+
+# settings.json is replaced wholesale, so other repos' JSON fragments are merged
+# back into it after the copy.
+if compgen -G "$FRAGMENTS/*.json" >/dev/null; then
+  if ! command -v jq >/dev/null; then
+    warn "jq not on PATH — $FRAGMENTS not merged into settings.json"
+  elif (( DRY_RUN )); then
+    printf '    [dry-run] merge %s/*.json into %s\n' "$FRAGMENTS" "$TARGET/settings.json"
+  else
+    info "merging $FRAGMENTS into settings.json"
+    tmp="$(mktemp)"
+    jq -s '
+      def merge($b):
+        if type == "object" and ($b | type) == "object" then
+          reduce ($b | keys_unsorted[]) as $k (.; .[$k] |= merge($b[$k]))
+        elif type == "array" and ($b | type) == "array" then . + $b
+        else $b end;
+      reduce .[1:][] as $f (.[0]; merge($f))' \
+      "$TARGET/settings.json" "$FRAGMENTS"/*.json >"$tmp"
+    mv "$tmp" "$TARGET/settings.json"
+  fi
+fi
 
 # A deny rule wins over every other settings source, so vibe mode edits the
 # installed file rather than layering a second one on top.
