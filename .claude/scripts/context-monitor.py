@@ -54,13 +54,10 @@ def get_directory_display(workspace_data):
         return "unknown"
 
 
-HC = "/mnt/c/Users/Rhodri/AppData/Local/Programs/herdr-core/hc.exe"
-
-
 def tag_herdr_cwd(workspace_data):
-    """Herdr (Windows) can't see a WSL agent's folder; label its terminal with Claude's cwd."""
-    terminal, cwd = os.environ.get("HC_TERMINAL_ID"), workspace_data.get("current_dir")
-    if not terminal or not cwd or not os.path.exists(HC):
+    """Herdr (Windows) can't see a WSL agent's folder; label its terminal with Claude's cwd via hc at $HERDR_HC."""
+    hc, terminal, cwd = os.environ.get("HERDR_HC"), os.environ.get("HC_TERMINAL_ID"), workspace_data.get("current_dir")
+    if not hc or not terminal or not cwd:
         return
     cache = f"/tmp/herdr-cwd-{terminal}"
     try:
@@ -71,7 +68,7 @@ def tag_herdr_cwd(workspace_data):
         pass
     with open(cache, "w") as f:
         f.write(cwd)
-    subprocess.Popen([HC, "label", terminal, f"cwd={cwd}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.Popen([hc, "label", terminal, f"cwd={cwd}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def main():
