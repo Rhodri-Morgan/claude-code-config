@@ -8,6 +8,9 @@ something different, follow the repo.
 - Work in a git worktree rather than the main checkout wherever you can
   (`/create-worktree`). Worktrees go under `<repo>/.worktrees/`, never in
   sibling folders.
+- Once you're working in a worktree, `cd` into it and stay there, rather than
+  reaching in with absolute paths from the main checkout. Herdr reads the
+  session's current folder to know which repo to open for review.
 - Whatever a worktree runs has to be isolated to that worktree: its own Compose
   project and its own ports. Don't hardcode a port.
 - Tear down a worktree's Docker stack (`make docker-clean`) before you remove
@@ -43,6 +46,9 @@ As a starting point, not a rule: `uv`, Black, Ruff, ty, vulture and pytest for
 Python, and Prettier, oxlint, `tsc` and knip for TypeScript.
 
 Run each tool through its `make` target, not directly.
+
+To open a file or folder for the user, use Cursor (`cursor <path>`, or
+`/cursor` for a worktree).
 
 ## Git hooks
 
