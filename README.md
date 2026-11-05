@@ -168,7 +168,7 @@ Use the `make` targets:
 | ------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `make install`      | `./install.sh`                 | Replaces the managed items, then merges `settings.d/` into `settings.json`                                                                                    |
 | `make install-full` | `./install.sh --session-state` | Also merges `projects/`, `sessions/`, `history.jsonl`                                                                                                         |
-| `make install-vibe` | `./install.sh --vibe`          | Allows `gh pr merge`, `close` and `reopen`, and drops the main/master git denies (force-push, branch delete, `reset --hard`) in the installed `settings.json` |
+| `make install-vibe` | `./install.sh --vibe`          | Drops the main/master git denies (force-push, branch delete, `reset --hard`) in the installed `settings.json`                                                 |
 
 None of them prompt. `./install.sh --dry-run` prints the plan and changes nothing.
 
