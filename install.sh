@@ -31,7 +31,7 @@ Usage: ./install.sh [options]
   --dry-run         Print what would happen, change nothing
   --no-plugins      Files only; skip marketplaces, plugins and MCP servers
   --session-state   Also merge ${SESSION_STATE[*]} across (large)
-  --vibe            Also let the agent merge/close/reopen PRs and rewrite main
+  --vibe            Also let the agent rewrite main
   -h, --help        This message
 
 Replaces the repo's own entries in: ${MANAGED[*]}
@@ -156,13 +156,12 @@ fi
 # A deny rule wins over every other settings source, so vibe mode edits the
 # installed file rather than layering a second one on top.
 if (( VIBE )); then
-  info "vibe: allowing PR merge/close/reopen and force-push/delete/reset on main"
+  info "vibe: allowing force-push/delete/reset on main"
   if (( DRY_RUN )); then
     printf '    [dry-run] jq edit %s\n' "$TARGET/settings.json"
   else
     tmp="$(mktemp)"
-    jq '.permissions.deny |= map(select(test("gh pr (merge|close)|git .*(main|master)") | not))
-      | .permissions.allow += ["Bash(gh pr merge:*)", "Bash(gh pr close:*)", "Bash(gh pr reopen:*)"]' \
+    jq '.permissions.deny |= map(select(test("git .*(main|master)") | not))' \
       "$TARGET/settings.json" >"$tmp"
     mv "$tmp" "$TARGET/settings.json"
   fi
