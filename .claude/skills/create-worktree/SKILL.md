@@ -1,7 +1,7 @@
 ---
 name: create-worktree
 description: Create a git worktree on a fresh branch from the latest default branch. Use when the user wants to start isolated work in a new worktree, says "new worktree", "worktree this", "spin up a worktree", or similar. Stashes any uncommitted changes on the current branch (left behind, not carried into the worktree), fast-forwards the default branch, then creates the worktree on an auto-generated branch.
-allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git stash:*), Bash(git fetch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git pull:*), Bash(git worktree:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(git check-ignore:*), Bash(git remote:*), Bash(basename:*), Bash(pwd), Bash(cp:*), Bash(mkdir:*), Bash(dirname:*), Bash(printf:*)
+allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git stash:*), Bash(git fetch:*), Bash(git checkout:*), Bash(git switch:*), Bash(git pull:*), Bash(git worktree:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(git check-ignore:*), Bash(git remote:*), Bash(basename:*), Bash(pwd), Bash(cp:*), Bash(mkdir:*), Bash(dirname:*), Bash(printf:*), Bash(find:*), Bash(make:*), Bash(uv sync:*), Bash(npm install:*)
 user-invocable: true
 model: haiku
 ---
@@ -169,7 +169,39 @@ SSM needs only the `direnv allow`.
 If all three fail, report it in the summary and stop — don't fall back to a bare
 `cp`, it will be denied.
 
-### Step 7: Report
+### Step 7: Install dependencies
+
+A worktree starts with no `.venv` or `node_modules`. Seed them cheaply rather
+than downloading again. Never symlink or copy a `.venv` — its shebangs and
+editable install point at the main checkout.
+
+Clone each `node_modules` from the main checkout. `cp -c` is an APFS
+copy-on-write clone: instant, and no extra disk until files change.
+
+```
+!cd <repo_root> && find . -path ./.worktrees -prune -o -name node_modules -prune -print
+```
+
+For each path printed:
+
+```
+!mkdir -p <worktree_path>/<parent-dir> && cp -cR <repo_root>/<path> <worktree_path>/<path>
+```
+
+Then reconcile against the worktree's lockfiles, from inside `worktree_path`,
+first match wins:
+
+```
+!cd <worktree_path> && make install-dev
+```
+
+Without an `install-dev` target, run `uv sync` in each directory with a
+`uv.lock` and `npm install` in each directory with a `package-lock.json`.
+`uv sync` clones packages from the uv cache, so it takes seconds.
+
+If install fails, report it and carry on — the worktree is still usable.
+
+### Step 8: Report
 
 Tell the user:
 
@@ -178,6 +210,7 @@ Tell the user:
 - Whether a stash was created (and the stash message) on the original branch
 - How many environment files were copied, and by which command (omit if zero)
 - Whether the env seeding failed entirely, and which of the three commands was tried
+- Whether dependencies installed, and how many `node_modules` were cloned
 - That `/cursor` will open the new worktree
 
 Keep it to 2–4 lines.
