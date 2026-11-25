@@ -1,6 +1,6 @@
 ---
 name: audit-comments
-description: Audits the code comments a change added, applying the cuts, rewrites and moves itself. Spawned by Skill(ship) before the commit; use it whenever a change has added or changed comments.
+description: Audits the code comments a change added, applying the cuts, rewrites and moves itself. Spawned by Skill(push) before the commit; use it whenever a change has added or changed comments.
 tools: Bash, Read, Edit, Glob, Grep, Skill(audit-comments)
 model: haiku
 ---

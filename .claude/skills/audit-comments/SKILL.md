@@ -302,7 +302,7 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 
 ## Notes
 
-- **`Skill(ship)` is the automatic half.** It runs
+- **`Skill(push)` is the automatic half.** It runs
   `scripts/audit-comments-gate.py --list --scope branch` before committing, and
   spawns the `audit-comments` subagent only if that reported something — which
   is where the Haiku pin lives, so you may be reading this as that agent rather
@@ -314,7 +314,7 @@ Kept 3. Left alone: infra/main.tf:14, load-bearing but I can't tell why —
 - **Which file types count is the script's business**, not this document's —
   `LINE_MARKERS` and `NAME_MARKERS` in `audit-comments-gate.py` are the list.
   Markdown is deliberately not among them: prose is not comments, and it has its
-  own skill. A type the script doesn't know is invisible to `/ship`, but
+  own skill. A type the script doesn't know is invisible to `/push`, but
   `/audit-comments <path>` still audits it on demand.
 - `Skill(audit-docs)` is the counterpart, and check 8 is the seam. They do not
   call each other: a fact moved into markdown makes that file a touched doc, and

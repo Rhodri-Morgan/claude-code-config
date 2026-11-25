@@ -63,7 +63,7 @@ To open a file or folder for the user, use Cursor (`cursor <path>`, or
 
 ## Pull requests
 
-- Open or update a PR with `/ship`, not by hand. It audits the comments and docs
+- Open or update a PR with `/push`, not by hand. It audits the comments and docs
   the branch touched, commits, pushes and writes the PR in one pass, so the
   audit's fixes end up in the PR's own commit.
 - For only part of that flow, use `/commit` or `/pull-request`.

@@ -94,7 +94,7 @@ the reasoning are in [docs/destructive-commands.md](docs/destructive-commands.md
 
 ## Audits
 
-Two audits run from `/ship` before it commits: `audit-comments-gate.py` and
+Two audits run from `/push` before it commits: `audit-comments-gate.py` and
 `audit-docs-gate.py` each list what the branch touched, and a Haiku subagent
 audits only what a detector reported. The reasoning and the file lists are in
 [docs/audits.md](docs/audits.md).

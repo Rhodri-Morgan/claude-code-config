@@ -263,7 +263,7 @@ Unverified (1)
 
 - **Doc rot is silent.** Nothing fails when a doc goes stale, which is why this
   skill weights verification over style. If time is short, do check 1 and stop.
-- **`Skill(ship)` runs `scripts/audit-docs-gate.py --list --scope branch`**
+- **`Skill(push)` runs `scripts/audit-docs-gate.py --list --scope branch`**
   before committing, and spawns the `audit-docs` subagent only if that reported
   a touched doc — the same shape as the comment detector. The subagent is where
   the Haiku pin lives, so you may be reading this as that agent rather than in
@@ -273,7 +273,7 @@ Unverified (1)
   claim (`CHANGELOG.md`, licences) is excluded deliberately: reporting generated
   files teaches the reader to ignore the list.
 - `Skill(audit-comments)` feeds this via its check 8, but does not call it, and
-  under `/ship` the two run concurrently. A fact it moves out of a comment into
-  a doc is therefore audited on the *next* `/ship`, not this one.
+  under `/push` the two run concurrently. A fact it moves out of a comment into
+  a doc is therefore audited on the *next* `/push`, not this one.
 - On a repo whose `docs/` is linked from `AGENTS.md`, that index is also a
   check: a doc nothing links to is a doc nothing reads.

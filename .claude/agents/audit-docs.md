@@ -1,6 +1,6 @@
 ---
 name: audit-docs
-description: Audits the markdown a change touches, verifying each claim against the repo and applying the corrections itself. Spawned by Skill(ship) before the commit; use it whenever a change has edited a doc.
+description: Audits the markdown a change touches, verifying each claim against the repo and applying the corrections itself. Spawned by Skill(push) before the commit; use it whenever a change has edited a doc.
 tools: Bash, Read, Edit, Glob, Grep, Skill(audit-docs)
 model: haiku
 ---
