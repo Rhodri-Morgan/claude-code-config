@@ -1,12 +1,12 @@
 ---
-name: ship
-description: Use when the user invokes /ship to audit, commit, push, and create or update a pull request in one flow
+name: push
+description: Use when the user invokes /push to audit, commit, push, and create or update a pull request in one flow
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git log:*), Bash(git push:*), Bash(git branch:*), Bash(git symbolic-ref:*), Bash(python3:*), Bash(gh pr create:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh pr edit:*), Read, Agent(audit-comments), Agent(audit-docs), Skill(commit), Skill(pull-request), Skill(branch)
 user-invocable: true
 model: haiku
 ---
 
-# Ship
+# Push
 
 Audit, commit, push, and create or update a pull request in one command.
 
@@ -76,7 +76,7 @@ created or already existed:
 - Do NOT ask for confirmation at any step — just execute the full flow
 - Relay each agent's report as-is; do not re-audit its findings yourself
 - If an audit agent fails or returns nothing usable, say so in one line and
-  continue to the commit — a failed audit must never block the ship
+  continue to the commit — a failed audit must never block the push
 - If `Skill(commit)` creates a branch (because you were on main), continue with
   that new branch
 - If there are no changes to commit, skip straight to `Skill(pull-request)`

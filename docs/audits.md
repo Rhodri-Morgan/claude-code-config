@@ -1,21 +1,21 @@
 # Audits
 
 Comment and doc quality needs a check: a rule in `CLAUDE.md` only helps if
-something enforces it. Two audits do the checking, and `/ship` is where they run:
+something enforces it. Two audits do the checking, and `/push` is where they run:
 
 | Detector                 | Finds                              | Hands off to        |
 | ------------------------ | ---------------------------------- | ------------------- |
 | `audit-comments-gate.py` | Comment lines the branch added     | `Agent(audit-comments)` |
 | `audit-docs-gate.py`     | Docs the branch touched            | `Agent(audit-docs)` |
 
-`Skill(ship)` runs both with `--list --scope branch` before it commits, and
+`Skill(push)` runs both with `--list --scope branch` before it commits, and
 spawns a subagent only for a detector that reported something. A branch that
 touched no comments and no docs therefore costs two script runs and nothing
 else.
 
 **It runs once per PR, not once per turn.** It is deliberately not a `Stop`
 hook: firing at the end of every turn re-runs the same audit over the same
-branch a dozen times per PR, which costs far more than it catches. `/ship` is
+branch a dozen times per PR, which costs far more than it catches. `/push` is
 the one command that marks a PR, so the audit runs there.
 
 The audit runs **before** the commit, not after the PR, so the edits it makes
@@ -40,8 +40,8 @@ claim by claim teaches you to ignore it.
 
 They do not chain. `audit-comments` moves system-level facts out of comments and
 into markdown, which makes that file a touched doc — but the two run
-concurrently, so the docs audit picks it up on the next `/ship`.
+concurrently, so the docs audit picks it up on the next `/push`.
 
-The two detectors are separate scripts so either can be dropped from `/ship`
+The two detectors are separate scripts so either can be dropped from `/push`
 alone. They share `_audit_gate.py` for the git half, so their scope semantics
 cannot drift apart.
